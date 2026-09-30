@@ -47,17 +47,57 @@
         </p>
       </div>
 
-      <button
-  id="btn-sair-professor"
-  type="button"
+     <div
   class="
-    text-sm
-    text-slate-400
-    hover:text-white
+    flex
+    items-center
+    gap-3
   "
 >
-  Sair
-</button>
+
+  <!-- ===============================================
+       GERENCIAR USUÁRIOS
+       Visível somente para administrador.
+       O JavaScript removerá "hidden" posteriormente.
+       =============================================== -->
+
+  <button
+    id="btn-gerenciar-usuarios"
+    type="button"
+    class="
+      hidden
+      bg-blue-600
+      hover:bg-blue-500
+      text-white
+      text-xs
+      font-bold
+      px-4
+      py-2
+      rounded
+      transition
+    "
+  >
+    Gerenciar Usuários
+  </button>
+
+
+  <!-- ===============================================
+       SAIR
+       =============================================== -->
+
+  <button
+    id="btn-sair-professor"
+    type="button"
+    class="
+      text-sm
+      text-slate-400
+      hover:text-white
+    "
+  >
+    Sair
+  </button>
+
+</div>
       
     </header>
 
