@@ -204,30 +204,220 @@ onAuthStateChanged(
 );
 
 /* =========================================================
-   ELEMENTOS
+   PAS-PROVA
+   PAINEL DO PROFESSOR
    ========================================================= */
 
-const formCriar =
-  document.getElementById('form-criar-prova');
+import {
+  db,
+  auth
+} from './firebase-config.js';
 
-const listaProvas =
-  document.getElementById('lista-provas');
 
-const provaId =
-  document.getElementById('prova-id');
+import {
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  doc,
+  updateDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const tituloFormulario =
-  document.getElementById('titulo-formulario');
 
-const btnSalvar =
-  document.getElementById('btn-salvar-prova');
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-const btnCancelarEdicao =
-  document.getElementById('btn-cancelar-edicao');
 
-const btnAtualizarLista =
-  document.getElementById('btn-atualizar-lista');
+/* =========================================================
+   PROTEÇÃO DO PAINEL E PERFIL DO USUÁRIO
+   ========================================================= */
 
+let usuarioAtual = null;
+let perfilAtual = null;
+let dadosUsuarioAtual = null;
+
+
+onAuthStateChanged(
+  auth,
+  async (usuario) => {
+
+    /* -----------------------------------------------------
+       NÃO AUTENTICADO
+       ----------------------------------------------------- */
+
+    if (!usuario) {
+
+      window.location.replace(
+        "./login-professor.html"
+      );
+
+      return;
+    }
+
+
+    try {
+
+      /* ---------------------------------------------------
+         CONSULTAR CADASTRO DO USUÁRIO
+         --------------------------------------------------- */
+
+      const referenciaUsuario =
+        doc(
+          db,
+          "usuarios",
+          usuario.uid
+        );
+
+
+      const documentoUsuario =
+        await getDoc(
+          referenciaUsuario
+        );
+
+
+      /* ---------------------------------------------------
+         USUÁRIO NÃO CADASTRADO
+         --------------------------------------------------- */
+
+      if (!documentoUsuario.exists()) {
+
+        alert(
+          "Sua conta não possui autorização para acessar o PAS-PROVA."
+        );
+
+
+        await signOut(auth);
+
+
+        window.location.replace(
+          "./login-professor.html"
+        );
+
+        return;
+      }
+
+
+      const dadosUsuario =
+        documentoUsuario.data();
+
+
+      /* ---------------------------------------------------
+         USUÁRIO DESATIVADO
+         --------------------------------------------------- */
+
+      if (dadosUsuario.ativo !== true) {
+
+        alert(
+          "Esta conta está desativada."
+        );
+
+
+        await signOut(auth);
+
+
+        window.location.replace(
+          "./login-professor.html"
+        );
+
+        return;
+      }
+
+
+      /* ---------------------------------------------------
+         PERFIL PERMITIDO
+         --------------------------------------------------- */
+
+      const perfil =
+        dadosUsuario.perfil;
+
+
+      if (
+        perfil !== "administrador" &&
+        perfil !== "professor"
+      ) {
+
+        alert(
+          "Perfil de usuário não autorizado."
+        );
+
+
+        await signOut(auth);
+
+
+        window.location.replace(
+          "./login-professor.html"
+        );
+
+        return;
+      }
+
+
+      /* ---------------------------------------------------
+         USUÁRIO AUTORIZADO
+         --------------------------------------------------- */
+
+      usuarioAtual = usuario;
+
+      perfilAtual = perfil;
+
+      dadosUsuarioAtual = dadosUsuario;
+
+
+      console.log(
+        "PAS-PROVA:",
+        dadosUsuario.nome,
+        "-",
+        perfilAtual
+      );
+
+
+      /*
+        Somente agora o painel fica visível.
+      */
+
+      document.body.classList.remove(
+        "painel-bloqueado"
+      );
+
+
+      /*
+        IMPORTANTE:
+
+        Não chamaremos carregarProvas() aqui ainda.
+
+        Faremos isso no próximo bloco, junto com
+        a nova lógica Administrador / Professor.
+      */
+
+    }
+
+    catch (erro) {
+
+      console.error(
+        "Erro ao verificar perfil:",
+        erro
+      );
+
+
+      alert(
+        "Não foi possível verificar sua autorização."
+      );
+
+
+      await signOut(auth);
+
+
+      window.location.replace(
+        "./login-professor.html"
+      );
+
+    }
+
+  }
+);
 
 /* =========================================================
    CONTROLE
@@ -274,6 +464,24 @@ if (formCriar) {
       e.preventDefault();
 
 
+      /* -----------------------------------------------------
+         GARANTIR USUÁRIO AUTENTICADO
+         ----------------------------------------------------- */
+
+      if (
+        !usuarioAtual ||
+        !perfilAtual ||
+        !dadosUsuarioAtual
+      ) {
+
+        alert(
+          "Aguarde a confirmação do usuário antes de salvar a prova."
+        );
+
+        return;
+      }
+
+
       const idAtual =
         provaId.value.trim();
 
@@ -285,6 +493,10 @@ if (formCriar) {
           ).value
         );
 
+
+      /* -----------------------------------------------------
+         DADOS BÁSICOS DA PROVA
+         ----------------------------------------------------- */
 
       const dadosProva = {
 
@@ -338,7 +550,6 @@ if (formCriar) {
         );
 
         return;
-
       }
 
 
@@ -349,7 +560,6 @@ if (formCriar) {
         );
 
         return;
-
       }
 
 
@@ -360,7 +570,6 @@ if (formCriar) {
         );
 
         return;
-
       }
 
 
@@ -371,7 +580,6 @@ if (formCriar) {
         );
 
         return;
-
       }
 
 
@@ -385,7 +593,6 @@ if (formCriar) {
         );
 
         return;
-
       }
 
 
@@ -399,7 +606,6 @@ if (formCriar) {
         );
 
         return;
-
       }
 
 
@@ -429,7 +635,6 @@ if (formCriar) {
         );
 
         return;
-
       }
 
 
@@ -453,6 +658,44 @@ if (formCriar) {
 
         if (idAtual) {
 
+          const provaExistente =
+            provasCarregadas.find(
+              (prova) =>
+                prova.id === idAtual
+            );
+
+
+          if (!provaExistente) {
+
+            alert(
+              "Não foi possível localizar a prova que está sendo editada."
+            );
+
+            return;
+          }
+
+
+          /*
+            Professor comum somente pode alterar
+            uma prova pertencente a ele.
+
+            Administrador pode alterar qualquer prova.
+          */
+
+          if (
+            perfilAtual === "professor" &&
+            provaExistente.professorUid !==
+              usuarioAtual.uid
+          ) {
+
+            alert(
+              "Você não possui permissão para editar esta prova."
+            );
+
+            return;
+          }
+
+
           const referencia =
             doc(
               db,
@@ -460,6 +703,16 @@ if (formCriar) {
               idAtual
             );
 
+
+          /*
+            IMPORTANTE:
+
+            dadosProva NÃO contém professorUid,
+            professorNome ou professorEmail.
+
+            Portanto, editar título, código,
+            duração etc. não muda o proprietário.
+          */
 
           await updateDoc(
             referencia,
@@ -482,6 +735,26 @@ if (formCriar) {
 
           dadosProva.criadoEm =
             new Date().toISOString();
+
+
+          /*
+            VÍNCULO DA PROVA COM O PROFESSOR
+          */
+
+          dadosProva.professorUid =
+            usuarioAtual.uid;
+
+
+          dadosProva.professorNome =
+            dadosUsuarioAtual.nome ||
+            usuarioAtual.email ||
+            "Professor";
+
+
+          dadosProva.professorEmail =
+            usuarioAtual.email ||
+            dadosUsuarioAtual.email ||
+            "";
 
 
           await addDoc(
@@ -531,6 +804,7 @@ if (formCriar) {
   );
 
 }
+
 
 /* =========================================================
    LOGOUT
@@ -589,6 +863,20 @@ async function carregarProvas() {
   }
 
 
+  /*
+    Não tenta carregar provas enquanto
+    a autenticação ainda não terminou.
+  */
+
+  if (
+    !usuarioAtual ||
+    !perfilAtual
+  ) {
+
+    return;
+  }
+
+
   try {
 
     listaProvas.innerHTML =
@@ -611,17 +899,66 @@ async function carregarProvas() {
     provasCarregadas = [];
 
 
+    /* -------------------------------------------------------
+       FILTRAR PROVAS CONFORME O PERFIL
+       ------------------------------------------------------- */
+
     querySnapshot.forEach(
       (documento) => {
 
-        provasCarregadas.push({
+        const dados =
+          documento.data();
 
-          id:
-            documento.id,
 
-          ...documento.data()
+        /*
+          ADMINISTRADOR
 
-        });
+          Pode visualizar todas as provas.
+
+          Isso inclui também as provas antigas
+          criadas antes da implantação do
+          professorUid.
+        */
+
+        if (
+          perfilAtual === "administrador"
+        ) {
+
+          provasCarregadas.push({
+
+            id:
+              documento.id,
+
+            ...dados
+
+          });
+
+          return;
+        }
+
+
+        /*
+          PROFESSOR
+
+          Visualiza somente as provas cujo
+          professorUid corresponde ao seu UID.
+        */
+
+        if (
+          perfilAtual === "professor" &&
+          dados.professorUid === usuarioAtual.uid
+        ) {
+
+          provasCarregadas.push({
+
+            id:
+              documento.id,
+
+            ...dados
+
+          });
+
+        }
 
       }
     );
@@ -663,7 +1000,6 @@ async function carregarProvas() {
         `;
 
       return;
-
     }
 
 
@@ -904,7 +1240,6 @@ async function carregarProvas() {
 
 }
 
-
 /* =========================================================
    CLIQUES NA LISTA
    ========================================================= */
@@ -958,13 +1293,34 @@ if (listaProvas) {
 
       if (acao === "editar") {
 
-        iniciarEdicao(
-          prova
-        );
+  /*
+    Professor comum somente pode editar
+    uma prova pertencente ao próprio UID.
 
-        return;
+    Administrador pode editar qualquer prova,
+    inclusive provas antigas sem professorUid.
+  */
 
-      }
+  if (
+    perfilAtual === "professor" &&
+    prova.professorUid !== usuarioAtual.uid
+  ) {
+
+    alert(
+      "Você não possui permissão para editar esta prova."
+    );
+
+    return;
+  }
+
+
+  iniciarEdicao(
+    prova
+  );
+
+  return;
+
+}
 
 
       /* =====================================================
@@ -973,11 +1329,31 @@ if (listaProvas) {
 
       if (acao === "excluir") {
 
-        await excluirProva(
-          prova
-        );
+  /*
+    Professor comum somente pode excluir
+    uma prova pertencente ao próprio UID.
 
-      }
+    Administrador pode excluir qualquer prova.
+  */
+
+  if (
+    perfilAtual === "professor" &&
+    prova.professorUid !== usuarioAtual.uid
+  ) {
+
+    alert(
+      "Você não possui permissão para excluir esta prova."
+    );
+
+    return;
+  }
+
+
+  await excluirProva(
+    prova
+  );
+
+}
 
     }
   );
@@ -1201,4 +1577,8 @@ if (btnAtualizarLista) {
    INICIALIZAÇÃO
    ========================================================= */
 
-carregarProvas();
+/*
+  O carregamento das provas será realizado
+  somente após a autenticação e a confirmação
+  do perfil do usuário.
+*/
