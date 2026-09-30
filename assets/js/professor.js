@@ -3,7 +3,11 @@
    PAINEL DO PROFESSOR
    ========================================================= */
 
-import { db } from './firebase-config.js';
+import {
+  db,
+  auth
+} from './firebase-config.js';
+
 
 import {
   collection,
@@ -14,6 +18,36 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+/* =========================================================
+   PROTEÇÃO DO PAINEL
+   ========================================================= */
+
+onAuthStateChanged(
+  auth,
+  (usuario) => {
+
+    if (!usuario) {
+
+      window.location.replace(
+        "./login-professor.html"
+      );
+
+      return;
+
+    }
+
+
+    document.body.classList.remove(
+      "painel-bloqueado"
+    );
+
+  }
+);
 
 /* =========================================================
    ELEMENTOS
