@@ -379,18 +379,17 @@ onAuthStateChanged(
       */
 
       document.body.classList.remove(
-        "painel-bloqueado"
-      );
+  "painel-bloqueado"
+);
 
 
-      /*
-        IMPORTANTE:
+/*
+  Agora que o Firebase Authentication confirmou
+  o usuário e o Firestore confirmou seu perfil,
+  podemos carregar as provas.
+*/
 
-        Não chamaremos carregarProvas() aqui ainda.
-
-        Faremos isso no próximo bloco, junto com
-        a nova lógica Administrador / Professor.
-      */
+await carregarProvas();
 
     }
 
