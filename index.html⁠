@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acesso - Provas Online</title>
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 flex items-center justify-center min-h-screen p-4">
+
+  <div class="max-w-md w-full bg-slate-800 rounded-xl p-8 shadow-2xl border border-slate-700">
+    <h1 class="text-3xl font-bold text-center text-blue-500 mb-2">Provas Online</h1>
+    <p class="text-slate-400 text-center text-sm mb-6">Plataforma de Avaliação Supervisionada</p>
+
+    <!-- Área do Aluno -->
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold text-slate-200 mb-3">Área do Aluno</h2>
+      <form id="form-aluno-entrada" class="space-y-4">
+        <div>
+          <label class="block text-xs uppercase text-slate-400 mb-1">Código da Prova</label>
+          <input type="text" id="codigo-prova" required placeholder="Ex: BIO-2026" class="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white focus:outline-none focus:border-blue-500 uppercase">
+        </div>
+        <div>
+          <label class="block text-xs uppercase text-slate-400 mb-1">Seu Nome Completo</label>
+          <input type="text" id="nome-aluno" required placeholder="Ex: João da Silva" class="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 font-bold py-3 rounded transition">ENTRAR NA PROVA</button>
+      </form>
+    </div>
+
+    <div class="border-t border-slate-700 pt-6">
+      <a href="professor.html" class="block text-center text-sm text-slate-400 hover:text-blue-400 underline">Acesso do Professor</a>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+
+    document.getElementById('form-aluno-entrada').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const codigo = document.getElementById('codigo-prova').value.trim().toUpperCase();
+      const nome = document.getElementById('nome-aluno').value.trim();
+      
+      sessionStorage.setItem('aluno_nome', nome);
+      window.location.href = `prova.html?codigo=${codigo}`;
+    });
+  </script>
+</body>
+</html>
