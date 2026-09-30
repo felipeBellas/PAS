@@ -19,211 +19,6 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-import {
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-/* =========================================================
-   PROTEÇÃO DO PAINEL E PERFIL DO USUÁRIO
-   ========================================================= */
-
-let usuarioAtual = null;
-let perfilAtual = null;
-
-
-onAuthStateChanged(
-  auth,
-  async (usuario) => {
-
-    /* -----------------------------------------------------
-       NÃO AUTENTICADO
-       ----------------------------------------------------- */
-
-    if (!usuario) {
-
-      window.location.replace(
-        "./login-professor.html"
-      );
-
-      return;
-
-    }
-
-
-    try {
-
-      /* ---------------------------------------------------
-         CONSULTAR CADASTRO DO USUÁRIO
-         --------------------------------------------------- */
-
-      const referenciaUsuario =
-        doc(
-          db,
-          "usuarios",
-          usuario.uid
-        );
-
-
-      const documentoUsuario =
-        await getDoc(
-          referenciaUsuario
-        );
-
-
-      /* ---------------------------------------------------
-         USUÁRIO NÃO CADASTRADO
-         --------------------------------------------------- */
-
-      if (!documentoUsuario.exists()) {
-
-        alert(
-          "Sua conta não possui autorização para acessar o PAS-PROVA."
-        );
-
-
-        await signOut(auth);
-
-
-        window.location.replace(
-          "./login-professor.html"
-        );
-
-        return;
-
-      }
-
-
-      const dadosUsuario =
-        documentoUsuario.data();
-
-
-      /* ---------------------------------------------------
-         USUÁRIO DESATIVADO
-         --------------------------------------------------- */
-
-      if (dadosUsuario.ativo !== true) {
-
-        alert(
-          "Esta conta está desativada."
-        );
-
-
-        await signOut(auth);
-
-
-        window.location.replace(
-          "./login-professor.html"
-        );
-
-        return;
-
-      }
-
-
-      /* ---------------------------------------------------
-         PERFIL PERMITIDO
-         --------------------------------------------------- */
-
-      const perfil =
-        dadosUsuario.perfil;
-
-
-      if (
-        perfil !== "administrador" &&
-        perfil !== "professor"
-      ) {
-
-        alert(
-          "Perfil de usuário não autorizado."
-        );
-
-
-        await signOut(auth);
-
-
-        window.location.replace(
-          "./login-professor.html"
-        );
-
-        return;
-
-      }
-
-
-      /* ---------------------------------------------------
-         USUÁRIO AUTORIZADO
-         --------------------------------------------------- */
-
-      usuarioAtual = usuario;
-
-      perfilAtual = perfil;
-
-
-      console.log(
-        "PAS-PROVA:",
-        dadosUsuario.nome,
-        "-",
-        perfilAtual
-      );
-
-
-      /*
-        Somente agora o painel fica visível.
-      */
-
-      document.body.classList.remove(
-        "painel-bloqueado"
-      );
-
-    }
-
-    catch (erro) {
-
-      console.error(
-        "Erro ao verificar perfil:",
-        erro
-      );
-
-
-      alert(
-        "Não foi possível verificar sua autorização."
-      );
-
-
-      await signOut(auth);
-
-
-      window.location.replace(
-        "./login-professor.html"
-      );
-
-    }
-
-  }
-);
-
-/* =========================================================
-   PAS-PROVA
-   PAINEL DO PROFESSOR
-   ========================================================= */
-
-import {
-  db,
-  auth
-} from './firebase-config.js';
-
-
-import {
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  doc,
-  updateDoc,
-  deleteDoc
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
 
 import {
   onAuthStateChanged,
@@ -239,6 +34,43 @@ let usuarioAtual = null;
 let perfilAtual = null;
 let dadosUsuarioAtual = null;
 
+
+/* =========================================================
+   ELEMENTOS
+   ========================================================= */
+
+const formCriar =
+  document.getElementById('form-criar-prova');
+
+const listaProvas =
+  document.getElementById('lista-provas');
+
+const provaId =
+  document.getElementById('prova-id');
+
+const tituloFormulario =
+  document.getElementById('titulo-formulario');
+
+const btnSalvar =
+  document.getElementById('btn-salvar-prova');
+
+const btnCancelarEdicao =
+  document.getElementById('btn-cancelar-edicao');
+
+const btnAtualizarLista =
+  document.getElementById('btn-atualizar-lista');
+
+
+/* =========================================================
+   CONTROLE
+   ========================================================= */
+
+let provasCarregadas = [];
+
+
+/* =========================================================
+   AUTENTICAÇÃO E PERFIL
+   ========================================================= */
 
 onAuthStateChanged(
   auth,
@@ -374,22 +206,20 @@ onAuthStateChanged(
       );
 
 
-      /*
-        Somente agora o painel fica visível.
-      */
+      /* ---------------------------------------------------
+         LIBERAR VISUALIZAÇÃO DO PAINEL
+         --------------------------------------------------- */
 
       document.body.classList.remove(
-  "painel-bloqueado"
-);
+        "painel-bloqueado"
+      );
 
 
-/*
-  Agora que o Firebase Authentication confirmou
-  o usuário e o Firestore confirmou seu perfil,
-  podemos carregar as provas.
-*/
+      /* ---------------------------------------------------
+         CARREGAR PROVAS APÓS AUTENTICAÇÃO
+         --------------------------------------------------- */
 
-await carregarProvas();
+      await carregarProvas();
 
     }
 
@@ -417,12 +247,6 @@ await carregarProvas();
 
   }
 );
-
-/* =========================================================
-   CONTROLE
-   ========================================================= */
-
-let provasCarregadas = [];
 
 
 /* =========================================================
