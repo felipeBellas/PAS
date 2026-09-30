@@ -39,7 +39,7 @@
           <input type="number" id="duracao-minutos" value="50" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded text-white">
         </div>
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Limite Tolera de Saídas de Tela</label>
+          <label class="block text-xs text-slate-400 mb-1">Limite Tolerado de Saídas de Tela</label>
           <input type="number" id="limite-saidas" value="2" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded text-white">
         </div>
         <div class="md:col-span-2">
@@ -58,6 +58,7 @@
 
   </div>
 
-  <script type="module" src="assets/js/professor.js"></script>
+  <!-- Caminho corrigido para o script relativo -->
+  <script type="module" src="./assets/js/professor.js"></script>
 </body>
 </html>
