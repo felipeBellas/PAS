@@ -3,50 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acesso - Provas Online</title>
-  <link rel="manifest" href="manifest.json">
+  <title>Painel do Professor</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 flex items-center justify-center min-h-screen p-4">
+<body class="bg-slate-900 text-slate-100 p-6">
+  <div class="max-w-5xl mx-auto space-y-8">
+    
+    <header class="flex justify-between items-center border-b border-slate-800 pb-4">
+      <h1 class="text-2xl font-bold text-blue-500">Painel do Professor</h1>
+      <a href="index.html" class="text-sm text-slate-400 hover:text-white">Sair</a>
+    </header>
 
-  <div class="max-w-md w-full bg-slate-800 rounded-xl p-8 shadow-2xl border border-slate-700">
-    <h1 class="text-3xl font-bold text-center text-blue-500 mb-2">Provas Online</h1>
-    <p class="text-slate-400 text-center text-sm mb-6">Plataforma de Avaliação Supervisionada</p>
-
-    <!-- Área do Aluno -->
-    <div class="mb-8">
-      <h2 class="text-lg font-semibold text-slate-200 mb-3">Área do Aluno</h2>
-      <form id="form-aluno-entrada" class="space-y-4">
+    <!-- Formulário de Criar Prova -->
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h2 class="text-xl font-bold mb-4 text-slate-200">Cadastrar Nova Prova</h2>
+      <form id="form-criar-prova" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs uppercase text-slate-400 mb-1">Código da Prova</label>
-          <input type="text" id="codigo-prova" required placeholder="Ex: BIO-2026" class="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white focus:outline-none focus:border-blue-500 uppercase">
+          <label class="block text-xs text-slate-400 mb-1">Título da Avaliação</label>
+          <input type="text" id="titulo-prova" required placeholder="Ex: P1 - Citologia" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded text-white">
         </div>
         <div>
-          <label class="block text-xs uppercase text-slate-400 mb-1">Seu Nome Completo</label>
-          <input type="text" id="nome-aluno" required placeholder="Ex: João da Silva" class="w-full bg-slate-900 border border-slate-700 rounded p-3 text-white focus:outline-none focus:border-blue-500">
+          <label class="block text-xs text-slate-400 mb-1">Turma / Disciplina</label>
+          <input type="text" id="turma-disciplina" required placeholder="Ex: 3º Ano A - Biologia" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded text-white">
         </div>
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 font-bold py-3 rounded transition">ENTRAR NA PROVA</button>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-slate-400 mb-1">Link do Google Forms</label>
+          <input type="url" id="link-forms" required placeholder="https://docs.google.com/forms/d/e/.../viewform" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded text-white">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Código Único (Ex: BIO-101)</label>
+          <input type="text" id="codigo-unico" required placeholder="Ex: BIO-101" class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded text-white uppercase">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Duração (Minutos)</label>
+          <input type="number" id="duracao-minutos" value="50" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded text-white">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Limite Tolerado de Saídas de Tela</label>
+          <input type="number" id="limite-saidas" value="2" required class="w-full bg-slate-900 border border-slate-700 p-2.5 rounded text-white">
+        </div>
+        <div class="md:col-span-2">
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 font-bold py-3 rounded text-white transition">SALVAR E GERAR PROVA</button>
+        </div>
       </form>
     </div>
 
-    <div class="border-t border-slate-700 pt-6">
-      <a href="professor.html" class="block text-center text-sm text-slate-400 hover:text-blue-400 underline">Acesso do Professor</a>
+    <!-- Lista de Provas Criadas -->
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h2 class="text-xl font-bold mb-4 text-slate-200">Provas Cadastradas</h2>
+      <div id="lista-provas" class="space-y-4">
+        <p class="text-slate-500">Carregando exames...</p>
+      </div>
     </div>
+
   </div>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
-    }
-
-    document.getElementById('form-aluno-entrada').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const codigo = document.getElementById('codigo-prova').value.trim().toUpperCase();
-      const nome = document.getElementById('nome-aluno').value.trim();
-      
-      sessionStorage.setItem('aluno_nome', nome);
-      window.location.href = `prova.html?codigo=${codigo}`;
-    });
-  </script>
+  <script type="module" src="./assets/js/professor.js"></script>
 </body>
 </html>
