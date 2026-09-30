@@ -378,6 +378,51 @@ if (formCriar) {
 
 }
 
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+const btnSairProfessor =
+  document.getElementById(
+    'btn-sair-professor'
+  );
+
+
+if (btnSairProfessor) {
+
+  btnSairProfessor.addEventListener(
+    'click',
+    async () => {
+
+      try {
+
+        await signOut(auth);
+
+
+        window.location.replace(
+          "./login-professor.html"
+        );
+
+      }
+
+      catch (erro) {
+
+        console.error(
+          "Erro ao sair:",
+          erro
+        );
+
+
+        alert(
+          "Não foi possível encerrar a sessão."
+        );
+
+      }
+
+    }
+  );
+
+}
 
 /* =========================================================
    CARREGAR PROVAS
