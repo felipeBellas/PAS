@@ -1,4 +1,4 @@
-# PAS
+# PAS-PROVA
 # Plataforma de Avaliação Supervisionada
 
 PWA leve para monitoramento e controle de provas do Google Forms com temporizador e prevenção de trocas de aba.
