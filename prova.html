@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Execução de Prova</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { user-select: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Bar Superior do Monitor -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+    <div>
+      <h1 id="titulo-exame" class="font-bold text-sm text-slate-200">Carregando Prova...</h1>
+      <p id="info-aluno" class="text-xs text-slate-400"></p>
+    </div>
+    
+    <div class="flex items-center space-x-6">
+      <div class="text-right">
+        <span class="block text-[10px] text-slate-400 uppercase">Tempo Restante</span>
+        <span id="cronometro" class="text-xl font-mono font-bold text-emerald-400">00:00</span>
+      </div>
+      <div class="text-right border-l border-slate-800 pl-6">
+        <span class="block text-[10px] text-slate-400 uppercase">Alertas de Saída</span>
+        <span id="contador-alertas" class="text-xl font-mono font-bold text-amber-400">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Container do Google Forms -->
+  <main id="container-forms" class="flex-grow relative">
+    <div id="loader" class="absolute inset-0 flex items-center justify-center bg-slate-950 z-10">
+      <p class="text-slate-400">Iniciando ambiente seguro...</p>
+    </div>
+    <iframe id="iframe-forms" src="" class="w-full h-full border-0 min-h-[calc(100vh-65px)]" allow="fullscreen"></iframe>
+  </main>
+
+  <script type="module" src="assets/js/prova.js"></script>
+</body>
+</html>
