@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Login do Professor - PAS-PROVA</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+
+<body
+  class="
+    bg-slate-950
+    text-slate-100
+    min-h-screen
+    flex
+    items-center
+    justify-center
+    p-6
+  "
+>
+
+  <main class="w-full max-w-md">
+
+    <div
+      class="
+        bg-slate-900
+        border
+        border-slate-800
+        rounded-2xl
+        p-8
+        shadow-2xl
+      "
+    >
+
+      <!-- LOGO / TÍTULO -->
+
+      <div class="text-center mb-8">
+
+        <h1
+          class="
+            text-3xl
+            font-bold
+            text-blue-500
+          "
+        >
+          PAS-PROVA
+        </h1>
+
+        <p
+          class="
+            text-slate-400
+            mt-2
+          "
+        >
+          Área do Professor
+        </p>
+
+      </div>
+
+
+      <!-- FORMULÁRIO -->
+
+      <form
+        id="form-login-professor"
+        class="space-y-5"
+      >
+
+        <!-- E-MAIL -->
+
+        <div>
+
+          <label
+            for="email-professor"
+            class="
+              block
+              text-sm
+              text-slate-400
+              mb-2
+            "
+          >
+            E-mail
+          </label>
+
+          <input
+            id="email-professor"
+            type="email"
+            required
+            autocomplete="username"
+            placeholder="professor@email.com"
+            class="
+              w-full
+              bg-slate-950
+              border
+              border-slate-700
+              rounded-lg
+              px-4
+              py-3
+              text-white
+              outline-none
+              focus:border-blue-500
+            "
+          >
+
+        </div>
+
+
+        <!-- SENHA -->
+
+        <div>
+
+          <label
+            for="senha-professor"
+            class="
+              block
+              text-sm
+              text-slate-400
+              mb-2
+            "
+          >
+            Senha
+          </label>
+
+          <input
+            id="senha-professor"
+            type="password"
+            required
+            autocomplete="current-password"
+            placeholder="Digite sua senha"
+            class="
+              w-full
+              bg-slate-950
+              border
+              border-slate-700
+              rounded-lg
+              px-4
+              py-3
+              text-white
+              outline-none
+              focus:border-blue-500
+            "
+          >
+
+        </div>
+
+
+        <!-- MENSAGEM -->
+
+        <div
+          id="mensagem-login"
+          class="
+            hidden
+            text-sm
+            text-center
+            rounded-lg
+            p-3
+          "
+        ></div>
+
+
+        <!-- ENTRAR -->
+
+        <button
+          id="btn-entrar-professor"
+          type="submit"
+          class="
+            w-full
+            bg-blue-600
+            hover:bg-blue-500
+            disabled:bg-slate-700
+            disabled:cursor-not-allowed
+            text-white
+            font-bold
+            py-3
+            rounded-lg
+            transition
+          "
+        >
+          ENTRAR
+        </button>
+
+      </form>
+
+
+      <!-- VOLTAR -->
+
+      <div
+        class="
+          text-center
+          mt-6
+          pt-6
+          border-t
+          border-slate-800
+        "
+      >
+
+        <a
+          href="./index.html"
+          class="
+            text-sm
+            text-slate-400
+            hover:text-white
+          "
+        >
+          Voltar para entrada dos alunos
+        </a>
+
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <script
+    type="module"
+    src="./assets/js/login-professor.js"
+  ></script>
+
+</body>
+
+</html>
