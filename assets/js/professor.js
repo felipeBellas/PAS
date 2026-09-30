@@ -13,6 +13,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   doc,
   updateDoc,
   deleteDoc
@@ -24,12 +25,20 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 /* =========================================================
-   PROTEÇÃO DO PAINEL
+   PROTEÇÃO DO PAINEL E PERFIL DO USUÁRIO
    ========================================================= */
+
+let usuarioAtual = null;
+let perfilAtual = null;
+
 
 onAuthStateChanged(
   auth,
-  (usuario) => {
+  async (usuario) => {
+
+    /* -----------------------------------------------------
+       NÃO AUTENTICADO
+       ----------------------------------------------------- */
 
     if (!usuario) {
 
@@ -42,9 +51,154 @@ onAuthStateChanged(
     }
 
 
-    document.body.classList.remove(
-      "painel-bloqueado"
-    );
+    try {
+
+      /* ---------------------------------------------------
+         CONSULTAR CADASTRO DO USUÁRIO
+         --------------------------------------------------- */
+
+      const referenciaUsuario =
+        doc(
+          db,
+          "usuarios",
+          usuario.uid
+        );
+
+
+      const documentoUsuario =
+        await getDoc(
+          referenciaUsuario
+        );
+
+
+      /* ---------------------------------------------------
+         USUÁRIO NÃO CADASTRADO
+         --------------------------------------------------- */
+
+      if (!documentoUsuario.exists()) {
+
+        alert(
+          "Sua conta não possui autorização para acessar o PAS-PROVA."
+        );
+
+
+        await signOut(auth);
+
+
+        window.location.replace(
+          "./login-professor.html"
+        );
+
+        return;
+
+      }
+
+
+      const dadosUsuario =
+        documentoUsuario.data();
+
+
+      /* ---------------------------------------------------
+         USUÁRIO DESATIVADO
+         --------------------------------------------------- */
+
+      if (dadosUsuario.ativo !== true) {
+
+        alert(
+          "Esta conta está desativada."
+        );
+
+
+        await signOut(auth);
+
+
+        window.location.replace(
+          "./login-professor.html"
+        );
+
+        return;
+
+      }
+
+
+      /* ---------------------------------------------------
+         PERFIL PERMITIDO
+         --------------------------------------------------- */
+
+      const perfil =
+        dadosUsuario.perfil;
+
+
+      if (
+        perfil !== "administrador" &&
+        perfil !== "professor"
+      ) {
+
+        alert(
+          "Perfil de usuário não autorizado."
+        );
+
+
+        await signOut(auth);
+
+
+        window.location.replace(
+          "./login-professor.html"
+        );
+
+        return;
+
+      }
+
+
+      /* ---------------------------------------------------
+         USUÁRIO AUTORIZADO
+         --------------------------------------------------- */
+
+      usuarioAtual = usuario;
+
+      perfilAtual = perfil;
+
+
+      console.log(
+        "PAS-PROVA:",
+        dadosUsuario.nome,
+        "-",
+        perfilAtual
+      );
+
+
+      /*
+        Somente agora o painel fica visível.
+      */
+
+      document.body.classList.remove(
+        "painel-bloqueado"
+      );
+
+    }
+
+    catch (erro) {
+
+      console.error(
+        "Erro ao verificar perfil:",
+        erro
+      );
+
+
+      alert(
+        "Não foi possível verificar sua autorização."
+      );
+
+
+      await signOut(auth);
+
+
+      window.location.replace(
+        "./login-professor.html"
+      );
+
+    }
 
   }
 );
