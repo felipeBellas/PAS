@@ -60,6 +60,9 @@ const btnCancelarEdicao =
 const btnAtualizarLista =
   document.getElementById('btn-atualizar-lista');
 
+const btnGerenciarUsuarios =
+  document.getElementById('btn-gerenciar-usuarios');
+
 
 /* =========================================================
    CONTROLE
@@ -196,6 +199,21 @@ onAuthStateChanged(
       perfilAtual = perfil;
 
       dadosUsuarioAtual = dadosUsuario;
+
+      /*
+  CONTROLES EXCLUSIVOS DO ADMINISTRADOR
+*/
+
+if (
+  perfilAtual === "administrador" &&
+  btnGerenciarUsuarios
+) {
+
+  btnGerenciarUsuarios.classList.remove(
+    "hidden"
+  );
+
+}
 
 
       console.log(
