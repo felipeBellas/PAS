@@ -3,25 +3,22 @@
    GERENCIAMENTO DE USUÁRIOS
    ========================================================= */
 
-
 import {
   db,
   auth
 } from './firebase-config.js';
 
-
 import {
   collection,
   getDocs,
   getDoc,
-  doc
+  doc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
 
 import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
 
 
 /* =========================================================
@@ -44,7 +41,6 @@ const btnVoltarPainel =
   document.getElementById('btn-voltar-painel');
 
 
-
 /* =========================================================
    ESTADO
    ========================================================= */
@@ -53,6 +49,7 @@ let usuarioAtual = null;
 
 let dadosUsuarioAtual = null;
 
+let usuariosCarregados = [];
 
 
 /* =========================================================
@@ -64,25 +61,15 @@ onAuthStateChanged(
 
   async (usuario) => {
 
-    /*
-      Nenhum usuário autenticado.
-    */
-
     if (!usuario) {
 
       window.location.href =
         "./login-professor.html";
 
       return;
-
     }
 
-
     try {
-
-      /*
-        Buscar o cadastro do usuário autenticado.
-      */
 
       const referenciaUsuario =
         doc(
@@ -91,18 +78,10 @@ onAuthStateChanged(
           usuario.uid
         );
 
-
       const documentoUsuario =
         await getDoc(
           referenciaUsuario
         );
-
-
-      /*
-        O usuário existe no Authentication,
-        mas não possui cadastro autorizado
-        no Firestore.
-      */
 
       if (!documentoUsuario.exists()) {
 
@@ -114,17 +93,10 @@ onAuthStateChanged(
           "./professor.html";
 
         return;
-
       }
-
 
       const dadosUsuario =
         documentoUsuario.data();
-
-
-      /*
-        Usuário desativado.
-      */
 
       if (dadosUsuario.ativo !== true) {
 
@@ -136,13 +108,7 @@ onAuthStateChanged(
           "./login-professor.html";
 
         return;
-
       }
-
-
-      /*
-        SOMENTE ADMINISTRADOR.
-      */
 
       if (
         dadosUsuario.perfil !== "administrador"
@@ -156,18 +122,11 @@ onAuthStateChanged(
           "./professor.html";
 
         return;
-
       }
-
-
-      /*
-        Administrador autorizado.
-      */
 
       usuarioAtual = usuario;
 
       dadosUsuarioAtual = dadosUsuario;
-
 
       console.log(
         "PAS-PROVA - Administrador:",
@@ -175,23 +134,12 @@ onAuthStateChanged(
         usuarioAtual.email
       );
 
-
-      /*
-        Somente agora mostramos a página.
-      */
-
       if (conteudoUsuarios) {
 
         conteudoUsuarios.classList.remove(
           "hidden"
         );
-
       }
-
-
-      /*
-        Carregar usuários.
-      */
 
       await carregarUsuarios();
 
@@ -204,20 +152,16 @@ onAuthStateChanged(
         erro
       );
 
-
       alert(
         "Não foi possível verificar as permissões do usuário."
       );
 
-
       window.location.href =
         "./professor.html";
-
     }
 
   }
 );
-
 
 
 /* =========================================================
@@ -230,15 +174,11 @@ async function carregarUsuarios() {
     return;
   }
 
-
   listaUsuarios.innerHTML = `
-
     <p class="text-slate-500">
       Carregando usuários...
     </p>
-
   `;
-
 
   try {
 
@@ -250,14 +190,12 @@ async function carregarUsuarios() {
         )
       );
 
-
-    const usuarios = [];
-
+    usuariosCarregados = [];
 
     snapshot.forEach(
       (documento) => {
 
-        usuarios.push({
+        usuariosCarregados.push({
 
           id: documento.id,
 
@@ -268,14 +206,7 @@ async function carregarUsuarios() {
       }
     );
 
-
-
-    /*
-      Administradores primeiro.
-      Depois ordenar pelo nome.
-    */
-
-    usuarios.sort(
+    usuariosCarregados.sort(
       (a, b) => {
 
         if (
@@ -285,14 +216,12 @@ async function carregarUsuarios() {
           return -1;
         }
 
-
         if (
           a.perfil !== "administrador" &&
           b.perfil === "administrador"
         ) {
           return 1;
         }
-
 
         return (
           a.nome || ""
@@ -304,29 +233,15 @@ async function carregarUsuarios() {
       }
     );
 
-
-
-    /*
-      Total.
-    */
-
     if (totalUsuarios) {
 
       totalUsuarios.innerText =
-        `${usuarios.length} usuário(s) cadastrado(s)`;
-
+        `${usuariosCarregados.length} usuário(s) cadastrado(s)`;
     }
 
-
-
-    /*
-      Nenhum usuário.
-    */
-
-    if (usuarios.length === 0) {
+    if (usuariosCarregados.length === 0) {
 
       listaUsuarios.innerHTML = `
-
         <div
           class="
             border
@@ -338,30 +253,20 @@ async function carregarUsuarios() {
         >
           Nenhum usuário cadastrado.
         </div>
-
       `;
 
       return;
-
     }
-
-
-
-    /*
-      Renderizar lista.
-    */
 
     listaUsuarios.innerHTML = "";
 
-
-    usuarios.forEach(
+    usuariosCarregados.forEach(
       (usuario) => {
 
         const card =
           criarCardUsuario(
             usuario
           );
-
 
         listaUsuarios.appendChild(
           card
@@ -379,9 +284,7 @@ async function carregarUsuarios() {
       erro
     );
 
-
     listaUsuarios.innerHTML = `
-
       <div
         class="
           bg-red-950/30
@@ -391,7 +294,6 @@ async function carregarUsuarios() {
           p-5
         "
       >
-
         <p class="text-red-400 font-bold">
           Erro ao carregar usuários.
         </p>
@@ -402,23 +304,18 @@ async function carregarUsuarios() {
             "Erro desconhecido"
           )}
         </p>
-
       </div>
-
     `;
-
 
     if (totalUsuarios) {
 
       totalUsuarios.innerText =
         "Não foi possível carregar os usuários";
-
     }
 
   }
 
 }
-
 
 
 /* =========================================================
@@ -430,7 +327,6 @@ function criarCardUsuario(usuario) {
   const card =
     document.createElement("div");
 
-
   card.className = `
     bg-slate-900
     border
@@ -439,46 +335,134 @@ function criarCardUsuario(usuario) {
     p-5
   `;
 
-
-
   const nome =
     usuario.nome ||
     "Usuário sem nome";
 
-
   const email =
     usuario.email ||
     "E-mail não informado";
-
 
   const perfil =
     usuario.perfil === "administrador"
       ? "Administrador"
       : "Professor";
 
-
   const estaAtivo =
     usuario.ativo === true;
 
-
+  const ehPropriaConta =
+    usuarioAtual &&
+    usuario.id === usuarioAtual.uid;
 
   const classePerfil =
     usuario.perfil === "administrador"
       ? "bg-blue-950 text-blue-300 border-blue-800"
       : "bg-slate-800 text-slate-300 border-slate-700";
 
-
   const classeStatus =
     estaAtivo
       ? "bg-emerald-950 text-emerald-300 border-emerald-800"
       : "bg-red-950 text-red-300 border-red-800";
-
 
   const textoStatus =
     estaAtivo
       ? "Ativo"
       : "Desativado";
 
+
+  let controles = "";
+
+
+  /*
+    A própria conta administrativa fica protegida.
+  */
+
+  if (ehPropriaConta) {
+
+    controles = `
+      <div class="mt-4">
+        <span
+          class="
+            inline-block
+            text-xs
+            text-slate-500
+            border
+            border-slate-700
+            rounded
+            px-3
+            py-2
+          "
+        >
+          Conta administrativa atual
+        </span>
+      </div>
+    `;
+
+  }
+
+  else {
+
+    controles = `
+      <div
+        class="
+          flex
+          flex-wrap
+          gap-2
+          mt-4
+        "
+      >
+
+        <button
+          type="button"
+          data-acao="editar"
+          data-id="${escapeHtml(usuario.id)}"
+          class="
+            bg-blue-600
+            hover:bg-blue-500
+            text-white
+            text-xs
+            font-bold
+            px-4
+            py-2
+            rounded
+            transition
+          "
+        >
+          Editar
+        </button>
+
+
+        <button
+          type="button"
+          data-acao="status"
+          data-id="${escapeHtml(usuario.id)}"
+          class="
+            ${
+              estaAtivo
+                ? "bg-red-700 hover:bg-red-600"
+                : "bg-emerald-700 hover:bg-emerald-600"
+            }
+            text-white
+            text-xs
+            font-bold
+            px-4
+            py-2
+            rounded
+            transition
+          "
+        >
+          ${
+            estaAtivo
+              ? "Desativar"
+              : "Ativar"
+          }
+        </button>
+
+      </div>
+    `;
+
+  }
 
 
   card.innerHTML = `
@@ -488,7 +472,7 @@ function criarCardUsuario(usuario) {
         flex
         flex-col
         md:flex-row
-        md:items-center
+        md:items-start
         md:justify-between
         gap-4
       "
@@ -531,8 +515,10 @@ function criarCardUsuario(usuario) {
           UID: ${escapeHtml(usuario.id)}
         </p>
 
-      </div>
 
+        ${controles}
+
+      </div>
 
 
       <div
@@ -576,7 +562,6 @@ function criarCardUsuario(usuario) {
       </div>
 
     </div>
-
   `;
 
 
@@ -584,6 +569,291 @@ function criarCardUsuario(usuario) {
 
 }
 
+
+/* =========================================================
+   CLIQUES NOS CONTROLES DOS USUÁRIOS
+   ========================================================= */
+
+if (listaUsuarios) {
+
+  listaUsuarios.addEventListener(
+    "click",
+
+    async (evento) => {
+
+      const botao =
+        evento.target.closest(
+          "button[data-acao]"
+        );
+
+      if (!botao) {
+        return;
+      }
+
+
+      const acao =
+        botao.dataset.acao;
+
+      const usuarioId =
+        botao.dataset.id;
+
+
+      const usuario =
+        usuariosCarregados.find(
+          (item) =>
+            item.id === usuarioId
+        );
+
+
+      if (!usuario) {
+
+        alert(
+          "Usuário não encontrado."
+        );
+
+        return;
+      }
+
+
+      /*
+        Proteção adicional:
+        não permitir alterações na própria
+        conta administrativa por esta tela.
+      */
+
+      if (
+        usuarioAtual &&
+        usuario.id === usuarioAtual.uid
+      ) {
+
+        alert(
+          "A conta administrativa atual está protegida."
+        );
+
+        return;
+      }
+
+
+      if (acao === "editar") {
+
+        await editarUsuario(
+          usuario
+        );
+
+        return;
+      }
+
+
+      if (acao === "status") {
+
+        await alterarStatusUsuario(
+          usuario
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================================================
+   EDITAR USUÁRIO
+   ========================================================= */
+
+async function editarUsuario(usuario) {
+
+  /*
+    Nesta primeira versão editamos nome e perfil.
+    O e-mail do Firebase Authentication não será
+    alterado por aqui.
+  */
+
+  const novoNome =
+    window.prompt(
+      "Nome do usuário:",
+      usuario.nome || ""
+    );
+
+
+  if (novoNome === null) {
+    return;
+  }
+
+
+  const nomeLimpo =
+    novoNome.trim();
+
+
+  if (!nomeLimpo) {
+
+    alert(
+      "O nome não pode ficar vazio."
+    );
+
+    return;
+  }
+
+
+  const perfilAtualUsuario =
+    usuario.perfil === "administrador"
+      ? "administrador"
+      : "professor";
+
+
+  const novoPerfil =
+    window.prompt(
+      'Perfil do usuário.\nDigite "professor" ou "administrador":',
+      perfilAtualUsuario
+    );
+
+
+  if (novoPerfil === null) {
+    return;
+  }
+
+
+  const perfilLimpo =
+    novoPerfil
+      .trim()
+      .toLowerCase();
+
+
+  if (
+    perfilLimpo !== "professor" &&
+    perfilLimpo !== "administrador"
+  ) {
+
+    alert(
+      'Perfil inválido. Use "professor" ou "administrador".'
+    );
+
+    return;
+  }
+
+
+  const confirmou =
+    window.confirm(
+      `Salvar alterações de ${nomeLimpo}?`
+    );
+
+
+  if (!confirmou) {
+    return;
+  }
+
+
+  try {
+
+    await updateDoc(
+      doc(
+        db,
+        "usuarios",
+        usuario.id
+      ),
+      {
+        nome: nomeLimpo,
+        perfil: perfilLimpo
+      }
+    );
+
+
+    alert(
+      "Usuário atualizado com sucesso."
+    );
+
+
+    await carregarUsuarios();
+
+  }
+
+  catch (erro) {
+
+    console.error(
+      "Erro ao editar usuário:",
+      erro
+    );
+
+
+    alert(
+      "Não foi possível atualizar o usuário: " +
+      erro.message
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ATIVAR / DESATIVAR
+   ========================================================= */
+
+async function alterarStatusUsuario(usuario) {
+
+  const novoStatus =
+    usuario.ativo !== true;
+
+
+  const acao =
+    novoStatus
+      ? "ativar"
+      : "desativar";
+
+
+  const confirmou =
+    window.confirm(
+      `Deseja realmente ${acao} o usuário "${usuario.nome || usuario.email}"?`
+    );
+
+
+  if (!confirmou) {
+    return;
+  }
+
+
+  try {
+
+    await updateDoc(
+      doc(
+        db,
+        "usuarios",
+        usuario.id
+      ),
+      {
+        ativo: novoStatus
+      }
+    );
+
+
+    alert(
+      novoStatus
+        ? "Usuário ativado com sucesso."
+        : "Usuário desativado com sucesso."
+    );
+
+
+    await carregarUsuarios();
+
+  }
+
+  catch (erro) {
+
+    console.error(
+      "Erro ao alterar status:",
+      erro
+    );
+
+
+    alert(
+      "Não foi possível alterar o status do usuário: " +
+      erro.message
+    );
+
+  }
+
+}
 
 
 /* =========================================================
@@ -624,7 +894,6 @@ function escapeHtml(valor) {
 }
 
 
-
 /* =========================================================
    ATUALIZAR
    ========================================================= */
@@ -642,7 +911,6 @@ if (btnAtualizarUsuarios) {
   );
 
 }
-
 
 
 /* =========================================================
