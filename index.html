@@ -30,7 +30,10 @@
 
   <main class="w-full max-w-md">
 
-    <!-- LOGO / TÍTULO -->
+    <!-- =====================================================
+         LOGO / TÍTULO
+         ===================================================== -->
+
     <div class="text-center mb-8">
 
       <h1
@@ -51,7 +54,10 @@
     </div>
 
 
-    <!-- PAINEL DE ENTRADA -->
+    <!-- =====================================================
+         PAINEL DE ENTRADA
+         ===================================================== -->
+
     <section
       class="
         bg-slate-900
@@ -81,6 +87,7 @@
       >
 
         <!-- NOME -->
+
         <div>
 
           <label
@@ -101,7 +108,6 @@
             autocomplete="name"
             required
             placeholder="Digite seu nome completo"
-
             class="
               w-full
               bg-slate-950
@@ -120,6 +126,7 @@
 
 
         <!-- CÓDIGO -->
+
         <div>
 
           <label
@@ -142,7 +149,6 @@
             autocapitalize="characters"
             spellcheck="false"
             placeholder="Ex: BIO-101"
-
             class="
               w-full
               bg-slate-950
@@ -164,9 +170,9 @@
 
 
         <!-- BOTÃO -->
+
         <button
           type="submit"
-
           class="
             w-full
             bg-blue-600
@@ -186,6 +192,7 @@
 
 
       <!-- MENSAGEM -->
+
       <p
         id="mensagem"
         class="
@@ -200,12 +207,14 @@
     </section>
 
 
-    <!-- PROFESSOR -->
+    <!-- =====================================================
+         PROFESSOR
+         ===================================================== -->
+
     <div class="text-center mt-6">
 
       <a
         href="./professor.html"
-
         class="
           text-xs
           text-slate-600
@@ -233,24 +242,36 @@
   </main>
 
 
+  <!-- =====================================================
+       JAVASCRIPT
+       ===================================================== -->
+
   <script>
 
     const formAcesso =
-      document.getElementById("form-acesso");
+      document.getElementById(
+        "form-acesso"
+      );
 
     const nomeAluno =
-      document.getElementById("nome-aluno");
+      document.getElementById(
+        "nome-aluno"
+      );
 
     const codigoProva =
-      document.getElementById("codigo-prova");
+      document.getElementById(
+        "codigo-prova"
+      );
 
     const mensagem =
-      document.getElementById("mensagem");
+      document.getElementById(
+        "mensagem"
+      );
 
 
-    /* ===============================
+    /* =====================================================
        NORMALIZAÇÃO DO CÓDIGO
-       =============================== */
+       ===================================================== */
 
     codigoProva.addEventListener(
       "input",
@@ -259,18 +280,61 @@
         codigoProva.value =
           codigoProva.value
             .toUpperCase()
-            .replace(/\s+/g, "");
+            .replace(
+              /\s+/g,
+              ""
+            );
 
       }
     );
 
 
-    /* ===============================
+    /* =====================================================
+       GERAR ID ÚNICO DA TENTATIVA
+       ===================================================== */
+
+    function gerarIdTentativa() {
+
+      /*
+        Navegadores modernos.
+      */
+
+      if (
+        window.crypto &&
+        typeof window.crypto.randomUUID
+          === "function"
+      ) {
+
+        return crypto.randomUUID();
+
+      }
+
+
+      /*
+        Alternativa para navegadores
+        que não possuem randomUUID.
+      */
+
+      return (
+        Date.now().toString(36)
+        +
+        "-"
+        +
+        Math.random()
+          .toString(36)
+          .substring(2, 12)
+      );
+
+    }
+
+
+    /* =====================================================
        ENTRADA NA PROVA
-       =============================== */
+       ===================================================== */
 
     formAcesso.addEventListener(
       "submit",
+
       (event) => {
 
         event.preventDefault();
@@ -279,13 +343,16 @@
         const nome =
           nomeAluno.value.trim();
 
+
         const codigo =
           codigoProva.value
             .trim()
             .toUpperCase();
 
 
-        mensagem.classList.add("hidden");
+        mensagem.classList.add(
+          "hidden"
+        );
 
 
         if (!nome) {
@@ -293,11 +360,17 @@
           mensagem.textContent =
             "Informe o nome do aluno.";
 
-          mensagem.classList.remove("hidden");
+
+          mensagem.classList.remove(
+            "hidden"
+          );
+
 
           nomeAluno.focus();
 
+
           return;
+
         }
 
 
@@ -306,18 +379,31 @@
           mensagem.textContent =
             "Informe o código da avaliação.";
 
-          mensagem.classList.remove("hidden");
+
+          mensagem.classList.remove(
+            "hidden"
+          );
+
 
           codigoProva.focus();
 
+
           return;
+
         }
 
 
+        /* =================================================
+           NOVA TENTATIVA
+           ================================================= */
+
+        const tentativa =
+          gerarIdTentativa();
+
+
         /*
-         * O prova.js recupera exatamente
-         * esta informação.
-         */
+          Nome usado pelo prova.js.
+        */
 
         sessionStorage.setItem(
           "aluno_nome",
@@ -326,12 +412,42 @@
 
 
         /*
-         * Encaminha para a avaliação.
-         */
+          Guardamos também a tentativa atual.
+        */
+
+        sessionStorage.setItem(
+          "pas_tentativa_atual",
+          tentativa
+        );
+
+
+        sessionStorage.setItem(
+          "pas_codigo_atual",
+          codigo
+        );
+
+
+        /*
+          Toda entrada realizada pelo index
+          representa uma NOVA tentativa.
+
+          Atualizar prova.html não passa por
+          este código, portanto F5 continuará
+          usando a mesma tentativa.
+        */
 
         window.location.href =
-          "./prova.html?codigo=" +
-          encodeURIComponent(codigo);
+          "./prova.html?codigo="
+          +
+          encodeURIComponent(
+            codigo
+          )
+          +
+          "&tentativa="
+          +
+          encodeURIComponent(
+            tentativa
+          );
 
       }
     );
