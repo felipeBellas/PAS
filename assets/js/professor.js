@@ -63,6 +63,9 @@ const btnAtualizarLista =
 const btnGerenciarUsuarios =
   document.getElementById('btn-gerenciar-usuarios');
 
+const conteudoPainel =
+  document.getElementById('conteudo-painel');
+
 
 /* =========================================================
    CONTROLE
@@ -214,7 +217,19 @@ if (
   );
 
 }
+       
+/*
+  EXIBIR O PAINEL SOMENTE APÓS
+  AUTENTICAÇÃO E AUTORIZAÇÃO
+*/
 
+if (conteudoPainel) {
+
+  conteudoPainel.classList.remove(
+    "hidden"
+  );
+
+}
 
       console.log(
         "PAS-PROVA:",
