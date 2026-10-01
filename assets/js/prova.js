@@ -15,7 +15,7 @@ import {
 
 
 /* =========================================================
-   DADOS INICIAIS
+   PARÂMETROS
    ========================================================= */
 
 const urlParams =
@@ -23,24 +23,47 @@ const urlParams =
     window.location.search
   );
 
+
 const codigoProva =
-  urlParams.get('codigo');
+  urlParams.get(
+    'codigo'
+  );
+
+
+const tentativaId =
+  urlParams.get(
+    'tentativa'
+  );
+
 
 const nomeAluno =
-  sessionStorage.getItem('aluno_nome')
-  || "Aluno Não Identificado";
+  sessionStorage.getItem(
+    'aluno_nome'
+  )
+  ||
+  "Aluno Não Identificado";
 
+
+/* =========================================================
+   VALIDAÇÃO DA TENTATIVA
+   ========================================================= */
 
 /*
-  Chave exclusiva da sessão desta prova.
+  Cada tentativa possui sua própria chave.
 
-  Usamos localStorage porque ele permanece
-  mesmo quando a página é atualizada.
+  Portanto:
+
+  João / tentativa A = sessão A
+  Maria / tentativa B = sessão B
+
+  Mesmo que os dois utilizem o mesmo código.
 */
 
 const chaveSessao =
-  codigoProva
-    ? `pas_prova_sessao_${codigoProva}`
+  codigoProva && tentativaId
+
+    ? `pas_prova_${codigoProva}_${tentativaId}`
+
     : null;
 
 
@@ -61,6 +84,16 @@ let horarioFim = null;
 let provaEncerrada = false;
 
 let monitoramentoIniciado = false;
+
+
+/*
+  Controle de ocultação.
+
+  A saída só será confirmada quando
+  a mesma página voltar a ficar visível.
+*/
+
+let paginaFicouOculta = false;
 
 
 /* =========================================================
@@ -126,7 +159,9 @@ function carregarSessao() {
 }
 
 
-function salvarSessao(dadosExtras = {}) {
+function salvarSessao(
+  dadosExtras = {}
+) {
 
   if (!chaveSessao) {
     return;
@@ -134,7 +169,9 @@ function salvarSessao(dadosExtras = {}) {
 
 
   const sessaoAnterior =
-    carregarSessao() || {};
+    carregarSessao()
+    ||
+    {};
 
 
   const sessaoAtualizada = {
@@ -143,13 +180,17 @@ function salvarSessao(dadosExtras = {}) {
 
     codigoProva,
 
-    aluno: nomeAluno,
+    tentativaId,
+
+    aluno:
+      nomeAluno,
 
     horarioFim,
 
     contadorAlertas,
 
-    encerrada: provaEncerrada,
+    encerrada:
+      provaEncerrada,
 
     ...dadosExtras
 
@@ -160,6 +201,7 @@ function salvarSessao(dadosExtras = {}) {
 
     localStorage.setItem(
       chaveSessao,
+
       JSON.stringify(
         sessaoAtualizada
       )
@@ -185,6 +227,10 @@ function salvarSessao(dadosExtras = {}) {
 
 async function inicializarProva() {
 
+  /* =======================================================
+     CÓDIGO INVÁLIDO
+     ======================================================= */
+
   if (!codigoProva) {
 
     alert(
@@ -201,27 +247,58 @@ async function inicializarProva() {
   }
 
 
+  /* =======================================================
+     TENTATIVA INVÁLIDA
+     ======================================================= */
+
+  if (!tentativaId) {
+
+    alert(
+      "Sessão da avaliação inválida. Entre novamente pelo início."
+    );
+
+
+    window.location.href =
+      "./index.html";
+
+
+    return;
+
+  }
+
+
   try {
+
+    /* =====================================================
+       LOCALIZAR PROVA
+       ===================================================== */
 
     const q =
       query(
+
         collection(
           db,
           "provas"
         ),
+
         where(
           "codigo",
           "==",
           codigoProva
         )
+
       );
 
 
     const querySnapshot =
-      await getDocs(q);
+      await getDocs(
+        q
+      );
 
 
-    if (querySnapshot.empty) {
+    if (
+      querySnapshot.empty
+    ) {
 
       alert(
         "Prova não encontrada!"
@@ -238,8 +315,14 @@ async function inicializarProva() {
 
 
     const dadosProva =
-      querySnapshot.docs[0].data();
+      querySnapshot
+        .docs[0]
+        .data();
 
+
+    /* =====================================================
+       ELEMENTOS
+       ===================================================== */
 
     const elTitulo =
       document.getElementById(
@@ -268,30 +351,35 @@ async function inicializarProva() {
 
 
     limiteSaidas =
-      dadosProva.limiteSaidas ?? 2;
+      dadosProva.limiteSaidas
+      ??
+      2;
 
 
     /* =====================================================
-       VERIFICAR SESSÃO EXISTENTE
+       RECUPERAR SESSÃO DA TENTATIVA
        ===================================================== */
 
     const sessao =
       carregarSessao();
 
 
-    /*
-      Existe sessão encerrada para
-      este aluno e esta prova.
-    */
+    /* =====================================================
+       TENTATIVA JÁ ENCERRADA
+       ===================================================== */
 
     if (
-      sessao &&
-      sessao.aluno === nomeAluno &&
+      sessao
+      &&
       sessao.encerrada === true
     ) {
 
       contadorAlertas =
-        sessao.contadorAlertas || 0;
+        Number(
+          sessao.contadorAlertas
+          ||
+          0
+        );
 
 
       atualizarContadorAlertas();
@@ -307,8 +395,11 @@ async function inicializarProva() {
 
 
       mostrarProvaEncerrada(
+
         sessao.motivoEncerramento
-        || "Esta prova já foi encerrada."
+        ||
+        "Esta prova já foi encerrada."
+
       );
 
 
@@ -317,13 +408,13 @@ async function inicializarProva() {
     }
 
 
-    /*
-      Existe uma prova em andamento.
-    */
+    /* =====================================================
+       TENTATIVA EXISTENTE
+       ===================================================== */
 
     if (
-      sessao &&
-      sessao.aluno === nomeAluno &&
+      sessao
+      &&
       sessao.horarioFim
     ) {
 
@@ -335,23 +426,25 @@ async function inicializarProva() {
 
       contadorAlertas =
         Number(
-          sessao.contadorAlertas || 0
+          sessao.contadorAlertas
+          ||
+          0
         );
 
     }
 
+
+    /* =====================================================
+       NOVA TENTATIVA
+       ===================================================== */
+
     else {
-
-      /*
-        PRIMEIRA ABERTURA DA PROVA.
-
-        Calculamos uma única vez o horário
-        real de término.
-      */
 
       const duracaoMinutos =
         Number(
-          dadosProva.duracao || 50
+          dadosProva.duracao
+          ||
+          50
         );
 
 
@@ -375,9 +468,11 @@ async function inicializarProva() {
       salvarSessao({
 
         iniciadaEm:
-          new Date().toISOString(),
+          new Date()
+            .toISOString(),
 
-        encerrada: false
+        encerrada:
+          false
 
       });
 
@@ -388,14 +483,16 @@ async function inicializarProva() {
 
 
     /* =====================================================
-       VERIFICAR SE O TEMPO JÁ ACABOU
+       VERIFICAR TEMPO
        ===================================================== */
 
     const restante =
       calcularTempoRestante();
 
 
-    if (restante <= 0) {
+    if (
+      restante <= 0
+    ) {
 
       encerrarProva(
         "Tempo Esgotado!"
@@ -417,13 +514,42 @@ async function inicializarProva() {
 
 
     /* =====================================================
-       CARREGAR GOOGLE FORMS
+       GOOGLE FORMS
        ===================================================== */
 
     if (elIframe) {
 
+      /*
+        Cada NOVA tentativa recebe uma URL
+        diferente.
+
+        Isso força uma nova navegação do iframe.
+
+        IMPORTANTE:
+        o parâmetro é ignorado pelo Forms,
+        mas altera a URL solicitada.
+      */
+
+      const separador =
+        dadosProva.linkForms.includes("?")
+          ? "&"
+          : "?";
+
+
+      const urlForms =
+        dadosProva.linkForms
+        +
+        separador
+        +
+        "pas_tentativa="
+        +
+        encodeURIComponent(
+          tentativaId
+        );
+
+
       elIframe.src =
-        dadosProva.linkForms;
+        urlForms;
 
     }
 
@@ -438,7 +564,7 @@ async function inicializarProva() {
 
 
     /* =====================================================
-       INICIAR CONTROLES
+       INICIAR SISTEMA
        ===================================================== */
 
     iniciarCronometro();
@@ -480,23 +606,30 @@ function calcularTempoRestante() {
 
 
   return Math.max(
+
     0,
+
     Math.ceil(
+
       (
         horarioFim
         -
         Date.now()
       )
+
       /
+
       1000
+
     )
+
   );
 
 }
 
 
 /* =========================================================
-   MOSTRAR CRONÔMETRO
+   ATUALIZAR CRONÔMETRO
    ========================================================= */
 
 function atualizarCronometro() {
@@ -513,9 +646,13 @@ function atualizarCronometro() {
 
   const minutos =
     String(
+
       Math.floor(
-        tempoRestanteSegundos / 60
+        tempoRestanteSegundos
+        /
+        60
       )
+
     ).padStart(
       2,
       '0'
@@ -524,7 +661,9 @@ function atualizarCronometro() {
 
   const segundos =
     String(
-      tempoRestanteSegundos % 60
+      tempoRestanteSegundos
+      %
+      60
     ).padStart(
       2,
       '0'
@@ -556,10 +695,6 @@ function iniciarCronometro() {
   }
 
 
-  /*
-    Mostra imediatamente o tempo correto.
-  */
-
   atualizarCronometro();
 
 
@@ -571,6 +706,7 @@ function iniciarCronometro() {
       "Tempo Esgotado!"
     );
 
+
     return;
 
   }
@@ -578,6 +714,7 @@ function iniciarCronometro() {
 
   intervalId =
     setInterval(
+
       () => {
 
         atualizarCronometro();
@@ -602,7 +739,9 @@ function iniciarCronometro() {
         }
 
       },
+
       1000
+
     );
 
 }
@@ -631,70 +770,121 @@ function atualizarContadorAlertas() {
 
 
 /* =========================================================
-   MONITORAMENTO DA SESSÃO
+   MONITORAMENTO
    ========================================================= */
 
 function iniciarMonitoramentoSessao() {
 
-  if (monitoramentoIniciado) {
+  if (
+    monitoramentoIniciado
+  ) {
     return;
   }
 
 
-  monitoramentoIniciado = true;
+  monitoramentoIniciado =
+    true;
 
-
-  /*
-    Detector de mudança de aba
-    ou minimização.
-  */
 
   document.addEventListener(
+
     'visibilitychange',
 
     () => {
 
       if (
-        document.hidden &&
-        !provaEncerrada
+        provaEncerrada
+      ) {
+        return;
+      }
+
+
+      /* ===============================================
+         PÁGINA FICOU OCULTA
+         =============================================== */
+
+      if (
+        document.hidden
       ) {
 
-        contadorAlertas++;
+        paginaFicouOculta =
+          true;
 
 
-        atualizarContadorAlertas();
+        return;
+
+      }
 
 
-        salvarSessao();
+      /* ===============================================
+         PÁGINA VOLTOU A FICAR VISÍVEL
+         =============================================== */
+
+      if (
+        paginaFicouOculta
+      ) {
+
+        paginaFicouOculta =
+          false;
 
 
-        salvarLogViolacao(
-          "Troca de Aba / Janela Minimizada"
-        );
-
-
-        if (
-          contadorAlertas > limiteSaidas
-        ) {
-
-          encerrarProva(
-            "Você excedeu o limite máximo de trocas de tela permitido!"
-          );
-
-        }
-
-        else {
-
-          alert(
-            `ATENÇÃO: Você saiu da tela da prova! Alerta ${contadorAlertas} de ${limiteSaidas}.`
-          );
-
-        }
+        registrarSaidaDeTela();
 
       }
 
     }
+
   );
+
+}
+
+
+/* =========================================================
+   REGISTRAR SAÍDA
+   ========================================================= */
+
+function registrarSaidaDeTela() {
+
+  if (
+    provaEncerrada
+  ) {
+    return;
+  }
+
+
+  contadorAlertas++;
+
+
+  atualizarContadorAlertas();
+
+
+  salvarSessao();
+
+
+  salvarLogViolacao(
+    "Troca de Aba / Janela Minimizada"
+  );
+
+
+  if (
+    contadorAlertas
+    >
+    limiteSaidas
+  ) {
+
+    encerrarProva(
+      "Você excedeu o limite máximo de trocas de tela permitido!"
+    );
+
+  }
+
+  else {
+
+    alert(
+      `ATENÇÃO: Você saiu da tela da prova! Alerta ${contadorAlertas} de ${limiteSaidas}.`
+    );
+
+  }
 
 }
 
@@ -705,11 +895,12 @@ function iniciarMonitoramentoSessao() {
 
 function iniciarProtecoesContraCopia() {
 
-  /*
-    MENU DE CONTEXTO / BOTÃO DIREITO
-  */
+  /* =======================================================
+     BOTÃO DIREITO
+     ======================================================= */
 
   document.addEventListener(
+
     'contextmenu',
 
     (evento) => {
@@ -717,7 +908,9 @@ function iniciarProtecoesContraCopia() {
       evento.preventDefault();
 
 
-      if (!provaEncerrada) {
+      if (
+        !provaEncerrada
+      ) {
 
         salvarLogViolacao(
           "Tentativa de abrir menu de contexto"
@@ -726,14 +919,16 @@ function iniciarProtecoesContraCopia() {
       }
 
     }
+
   );
 
 
-  /*
-    EVENTO DE CÓPIA
-  */
+  /* =======================================================
+     COPIAR
+     ======================================================= */
 
   document.addEventListener(
+
     'copy',
 
     (evento) => {
@@ -741,7 +936,9 @@ function iniciarProtecoesContraCopia() {
       evento.preventDefault();
 
 
-      if (!provaEncerrada) {
+      if (
+        !provaEncerrada
+      ) {
 
         salvarLogViolacao(
           "Tentativa de copiar conteúdo"
@@ -750,14 +947,16 @@ function iniciarProtecoesContraCopia() {
       }
 
     }
+
   );
 
 
-  /*
-    EVENTO DE RECORTE
-  */
+  /* =======================================================
+     RECORTAR
+     ======================================================= */
 
   document.addEventListener(
+
     'cut',
 
     (evento) => {
@@ -765,7 +964,9 @@ function iniciarProtecoesContraCopia() {
       evento.preventDefault();
 
 
-      if (!provaEncerrada) {
+      if (
+        !provaEncerrada
+      ) {
 
         salvarLogViolacao(
           "Tentativa de recortar conteúdo"
@@ -774,14 +975,16 @@ function iniciarProtecoesContraCopia() {
       }
 
     }
+
   );
 
 
-  /*
-    ARRASTAR CONTEÚDO
-  */
+  /* =======================================================
+     ARRASTAR
+     ======================================================= */
 
   document.addEventListener(
+
     'dragstart',
 
     (evento) => {
@@ -789,29 +992,35 @@ function iniciarProtecoesContraCopia() {
       evento.preventDefault();
 
     }
+
   );
 
 
-  /*
-    ATALHOS DE TECLADO
-  */
+  /* =======================================================
+     ATALHOS
+     ======================================================= */
 
   document.addEventListener(
+
     'keydown',
 
     (evento) => {
 
-      if (provaEncerrada) {
+      if (
+        provaEncerrada
+      ) {
         return;
       }
 
 
       const tecla =
-        evento.key.toLowerCase();
+        evento.key
+          .toLowerCase();
 
 
       const modificador =
-        evento.ctrlKey ||
+        evento.ctrlKey
+        ||
         evento.metaKey;
 
 
@@ -825,7 +1034,8 @@ function iniciarProtecoesContraCopia() {
       */
 
       if (
-        modificador &&
+        modificador
+        &&
         [
           'c',
           'x',
@@ -833,7 +1043,9 @@ function iniciarProtecoesContraCopia() {
           's',
           'p',
           'u'
-        ].includes(tecla)
+        ].includes(
+          tecla
+        )
       ) {
 
         evento.preventDefault();
@@ -854,7 +1066,8 @@ function iniciarProtecoesContraCopia() {
       */
 
       if (
-        evento.key === 'F12'
+        evento.key ===
+        'F12'
       ) {
 
         evento.preventDefault();
@@ -877,13 +1090,17 @@ function iniciarProtecoesContraCopia() {
       */
 
       if (
-        evento.ctrlKey &&
-        evento.shiftKey &&
+        evento.ctrlKey
+        &&
+        evento.shiftKey
+        &&
         [
           'i',
           'j',
           'c'
-        ].includes(tecla)
+        ].includes(
+          tecla
+        )
       ) {
 
         evento.preventDefault();
@@ -896,6 +1113,7 @@ function iniciarProtecoesContraCopia() {
       }
 
     }
+
   );
 
 }
@@ -905,9 +1123,13 @@ function iniciarProtecoesContraCopia() {
    SALVAR LOG
    ========================================================= */
 
-async function salvarLogViolacao(tipo) {
+async function salvarLogViolacao(
+  tipo
+) {
 
-  if (provaEncerrada) {
+  if (
+    provaEncerrada
+  ) {
     return;
   }
 
@@ -915,10 +1137,12 @@ async function salvarLogViolacao(tipo) {
   try {
 
     await addDoc(
+
       collection(
         db,
         "logs_violacao"
       ),
+
       {
 
         aluno:
@@ -931,9 +1155,11 @@ async function salvarLogViolacao(tipo) {
           tipo,
 
         timestamp:
-          new Date().toISOString()
+          new Date()
+            .toISOString()
 
       }
+
     );
 
   }
@@ -954,37 +1180,47 @@ async function salvarLogViolacao(tipo) {
    ENCERRAR PROVA
    ========================================================= */
 
-function encerrarProva(motivo) {
+function encerrarProva(
+  motivo
+) {
 
-  if (provaEncerrada) {
+  if (
+    provaEncerrada
+  ) {
     return;
   }
 
 
-  provaEncerrada = true;
+  provaEncerrada =
+    true;
 
 
-  if (intervalId) {
+  if (
+    intervalId
+  ) {
 
     clearInterval(
       intervalId
     );
 
 
-    intervalId = null;
+    intervalId =
+      null;
 
   }
 
 
   salvarSessao({
 
-    encerrada: true,
+    encerrada:
+      true,
 
     motivoEncerramento:
       motivo,
 
     encerradaEm:
-      new Date().toISOString()
+      new Date()
+        .toISOString()
 
   });
 
@@ -1000,9 +1236,12 @@ function encerrarProva(motivo) {
    TELA DE PROVA ENCERRADA
    ========================================================= */
 
-function mostrarProvaEncerrada(motivo) {
+function mostrarProvaEncerrada(
+  motivo
+) {
 
-  provaEncerrada = true;
+  provaEncerrada =
+    true;
 
 
   const elCronometro =
@@ -1011,7 +1250,9 @@ function mostrarProvaEncerrada(motivo) {
     );
 
 
-  if (elCronometro) {
+  if (
+    elCronometro
+  ) {
 
     elCronometro.innerText =
       "00:00";
@@ -1025,7 +1266,9 @@ function mostrarProvaEncerrada(motivo) {
     );
 
 
-  if (containerForms) {
+  if (
+    containerForms
+  ) {
 
     containerForms.innerHTML = `
 
@@ -1055,7 +1298,9 @@ function mostrarProvaEncerrada(motivo) {
 
 
         <p class="text-slate-300">
-          ${escapeHtml(motivo)}
+          ${escapeHtml(
+            motivo
+          )}
         </p>
 
 
@@ -1068,7 +1313,7 @@ function mostrarProvaEncerrada(motivo) {
         >
           Esta tentativa foi finalizada.
           Atualizar a página não reiniciará
-          a avaliação.
+          esta tentativa.
         </p>
 
 
@@ -1099,7 +1344,9 @@ function mostrarProvaEncerrada(motivo) {
    PROTEÇÃO DE TEXTO
    ========================================================= */
 
-function escapeHtml(valor) {
+function escapeHtml(
+  valor
+) {
 
   return String(
     valor ?? ""
