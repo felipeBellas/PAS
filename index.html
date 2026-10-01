@@ -31,7 +31,7 @@
   <main class="w-full max-w-md">
 
     <!-- =====================================================
-         LOGO / TÍTULO
+         LOGO
          ===================================================== -->
 
     <div class="text-center mb-8">
@@ -55,7 +55,7 @@
 
 
     <!-- =====================================================
-         PAINEL DE ENTRADA
+         PAINEL
          ===================================================== -->
 
     <section
@@ -80,6 +80,76 @@
         Acessar Avaliação
       </h2>
 
+
+      <!-- =================================================
+           ORIENTAÇÃO
+           ================================================= -->
+
+      <div
+        class="
+          bg-blue-950/60
+          border
+          border-blue-800
+          rounded-xl
+          p-4
+          mb-6
+        "
+      >
+
+        <h3
+          class="
+            text-blue-300
+            font-bold
+            text-sm
+            mb-2
+          "
+        >
+          Antes de acessar a avaliação
+        </h3>
+
+        <p
+          class="
+            text-sm
+            text-slate-300
+            leading-relaxed
+          "
+        >
+          Faça login na conta Google que será utilizada
+          para responder à prova antes de iniciar.
+        </p>
+
+        <p
+          class="
+            text-sm
+            text-slate-400
+            leading-relaxed
+            mt-2
+          "
+        >
+          Ao acessar a avaliação, o formulário ficará
+          bloqueado até você clicar em
+          <strong class="text-white">
+            INICIAR PROVA
+          </strong>.
+        </p>
+
+        <p
+          class="
+            text-sm
+            text-emerald-300
+            font-semibold
+            mt-2
+          "
+        >
+          O cronômetro só começará depois da sua confirmação.
+        </p>
+
+      </div>
+
+
+      <!-- =================================================
+           FORMULÁRIO
+           ================================================= -->
 
       <form
         id="form-acesso"
@@ -185,7 +255,7 @@
             text-white
           "
         >
-          INICIAR AVALIAÇÃO
+          ACESSAR AVALIAÇÃO
         </button>
 
       </form>
@@ -290,30 +360,21 @@
 
 
     /* =====================================================
-       GERAR ID ÚNICO DA TENTATIVA
+       GERAR ID DA TENTATIVA
        ===================================================== */
 
     function gerarIdTentativa() {
 
-      /*
-        Navegadores modernos.
-      */
-
       if (
-        window.crypto &&
-        typeof window.crypto.randomUUID
-          === "function"
+        window.crypto
+        &&
+        typeof window.crypto.randomUUID === "function"
       ) {
 
         return crypto.randomUUID();
 
       }
 
-
-      /*
-        Alternativa para navegadores
-        que não possuem randomUUID.
-      */
 
       return (
         Date.now().toString(36)
@@ -329,7 +390,7 @@
 
 
     /* =====================================================
-       ENTRADA NA PROVA
+       ACESSAR AVALIAÇÃO
        ===================================================== */
 
     formAcesso.addEventListener(
@@ -360,14 +421,11 @@
           mensagem.textContent =
             "Informe o nome do aluno.";
 
-
           mensagem.classList.remove(
             "hidden"
           );
 
-
           nomeAluno.focus();
-
 
           return;
 
@@ -379,14 +437,11 @@
           mensagem.textContent =
             "Informe o código da avaliação.";
 
-
           mensagem.classList.remove(
             "hidden"
           );
 
-
           codigoProva.focus();
-
 
           return;
 
@@ -401,19 +456,11 @@
           gerarIdTentativa();
 
 
-        /*
-          Nome usado pelo prova.js.
-        */
-
         sessionStorage.setItem(
           "aluno_nome",
           nome
         );
 
-
-        /*
-          Guardamos também a tentativa atual.
-        */
 
         sessionStorage.setItem(
           "pas_tentativa_atual",
@@ -427,14 +474,9 @@
         );
 
 
-        /*
-          Toda entrada realizada pelo index
-          representa uma NOVA tentativa.
-
-          Atualizar prova.html não passa por
-          este código, portanto F5 continuará
-          usando a mesma tentativa.
-        */
+        /* =================================================
+           ABRIR PROVA
+           ================================================= */
 
         window.location.href =
           "./prova.html?codigo="
