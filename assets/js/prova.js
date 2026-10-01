@@ -1,6 +1,6 @@
 /* =========================================================
    PAS-PROVA
-   EXECUÇÃO DA PROVA
+   EXECUÇÃO DA AVALIAÇÃO
    ========================================================= */
 
 import { db } from './firebase-config.js';
@@ -23,53 +23,33 @@ const urlParams =
     window.location.search
   );
 
-
 const codigoProva =
-  urlParams.get(
-    'codigo'
-  );
-
+  urlParams.get("codigo");
 
 const tentativaId =
-  urlParams.get(
-    'tentativa'
-  );
-
+  urlParams.get("tentativa");
 
 const nomeAluno =
-  sessionStorage.getItem(
-    'aluno_nome'
-  )
+  sessionStorage.getItem("aluno_nome")
   ||
   "Aluno Não Identificado";
 
 
 /* =========================================================
-   VALIDAÇÃO DA TENTATIVA
+   CHAVE DA TENTATIVA
    ========================================================= */
-
-/*
-  Cada tentativa possui sua própria chave.
-
-  Portanto:
-
-  João / tentativa A = sessão A
-  Maria / tentativa B = sessão B
-
-  Mesmo que os dois utilizem o mesmo código.
-*/
 
 const chaveSessao =
   codigoProva && tentativaId
-
     ? `pas_prova_${codigoProva}_${tentativaId}`
-
     : null;
 
 
 /* =========================================================
    ESTADO
    ========================================================= */
+
+let dadosProvaAtual = null;
 
 let tempoRestanteSegundos = 0;
 
@@ -81,17 +61,11 @@ let intervalId = null;
 
 let horarioFim = null;
 
+let provaIniciada = false;
+
 let provaEncerrada = false;
 
 let monitoramentoIniciado = false;
-
-
-/*
-  Controle de ocultação.
-
-  A saída só será confirmada quando
-  a mesma página voltar a ficar visível.
-*/
 
 let paginaFicouOculta = false;
 
@@ -102,7 +76,27 @@ let paginaFicouOculta = false;
 
 const elInfoAluno =
   document.getElementById(
-    'info-aluno'
+    "info-aluno"
+  );
+
+const btnIniciarProva =
+  document.getElementById(
+    "btn-iniciar-prova"
+  );
+
+const avisoPreparacao =
+  document.getElementById(
+    "aviso-preparacao"
+  );
+
+const elCronometro =
+  document.getElementById(
+    "cronometro"
+  );
+
+const elContadorAlertas =
+  document.getElementById(
+    "contador-alertas"
   );
 
 
@@ -124,7 +118,6 @@ function carregarSessao() {
     return null;
   }
 
-
   try {
 
     const dados =
@@ -132,11 +125,9 @@ function carregarSessao() {
         chaveSessao
       );
 
-
     if (!dados) {
       return null;
     }
-
 
     return JSON.parse(
       dados
@@ -150,7 +141,6 @@ function carregarSessao() {
       "Erro ao recuperar sessão:",
       erro
     );
-
 
     return null;
 
@@ -167,16 +157,14 @@ function salvarSessao(
     return;
   }
 
-
-  const sessaoAnterior =
+  const anterior =
     carregarSessao()
     ||
     {};
 
+  const atualizada = {
 
-  const sessaoAtualizada = {
-
-    ...sessaoAnterior,
+    ...anterior,
 
     codigoProva,
 
@@ -189,6 +177,9 @@ function salvarSessao(
 
     contadorAlertas,
 
+    iniciada:
+      provaIniciada,
+
     encerrada:
       provaEncerrada,
 
@@ -196,14 +187,12 @@ function salvarSessao(
 
   };
 
-
   try {
 
     localStorage.setItem(
       chaveSessao,
-
       JSON.stringify(
-        sessaoAtualizada
+        atualizada
       )
     );
 
@@ -227,29 +216,19 @@ function salvarSessao(
 
 async function inicializarProva() {
 
-  /* =======================================================
-     CÓDIGO INVÁLIDO
-     ======================================================= */
-
   if (!codigoProva) {
 
     alert(
       "Código da prova não fornecido!"
     );
 
-
     window.location.href =
       "./index.html";
-
 
     return;
 
   }
 
-
-  /* =======================================================
-     TENTATIVA INVÁLIDA
-     ======================================================= */
 
   if (!tentativaId) {
 
@@ -257,10 +236,8 @@ async function inicializarProva() {
       "Sessão da avaliação inválida. Entre novamente pelo início."
     );
 
-
     window.location.href =
       "./index.html";
-
 
     return;
 
@@ -270,109 +247,78 @@ async function inicializarProva() {
   try {
 
     /* =====================================================
-       LOCALIZAR PROVA
+       LOCALIZAR A PROVA
        ===================================================== */
 
     const q =
       query(
-
         collection(
           db,
           "provas"
         ),
-
         where(
           "codigo",
           "==",
           codigoProva
         )
-
       );
-
 
     const querySnapshot =
-      await getDocs(
-        q
-      );
+      await getDocs(q);
 
 
-    if (
-      querySnapshot.empty
-    ) {
+    if (querySnapshot.empty) {
 
       alert(
         "Prova não encontrada!"
       );
 
-
       window.location.href =
         "./index.html";
-
 
       return;
 
     }
 
 
-    const dadosProva =
+    dadosProvaAtual =
       querySnapshot
         .docs[0]
         .data();
 
 
-    /* =====================================================
-       ELEMENTOS
-       ===================================================== */
-
-    const elTitulo =
-      document.getElementById(
-        'titulo-exame'
-      );
-
-
-    const elIframe =
-      document.getElementById(
-        'iframe-forms'
-      );
-
-
-    const elLoader =
-      document.getElementById(
-        'loader'
-      );
-
-
-    if (elTitulo) {
-
-      elTitulo.innerText =
-        `${dadosProva.titulo} (${dadosProva.turma})`;
-
-    }
-
-
     limiteSaidas =
-      dadosProva.limiteSaidas
+      dadosProvaAtual.limiteSaidas
       ??
       2;
 
 
     /* =====================================================
-       RECUPERAR SESSÃO DA TENTATIVA
+       TÍTULO
+       ===================================================== */
+
+    const elTitulo =
+      document.getElementById(
+        "titulo-exame"
+      );
+
+    if (elTitulo) {
+
+      elTitulo.innerText =
+        `${dadosProvaAtual.titulo} (${dadosProvaAtual.turma})`;
+
+    }
+
+
+    /* =====================================================
+       RECUPERAR TENTATIVA
        ===================================================== */
 
     const sessao =
       carregarSessao();
 
 
-    /* =====================================================
-       TENTATIVA JÁ ENCERRADA
-       ===================================================== */
-
-    if (
-      sessao
-      &&
-      sessao.encerrada === true
-    ) {
+    if (sessao) {
 
       contadorAlertas =
         Number(
@@ -381,100 +327,20 @@ async function inicializarProva() {
           0
         );
 
+      provaIniciada =
+        sessao.iniciada === true;
 
-      atualizarContadorAlertas();
+      provaEncerrada =
+        sessao.encerrada === true;
 
+      if (sessao.horarioFim) {
 
-      if (elLoader) {
-
-        elLoader.classList.add(
-          'hidden'
-        );
+        horarioFim =
+          Number(
+            sessao.horarioFim
+          );
 
       }
-
-
-      mostrarProvaEncerrada(
-
-        sessao.motivoEncerramento
-        ||
-        "Esta prova já foi encerrada."
-
-      );
-
-
-      return;
-
-    }
-
-
-    /* =====================================================
-       TENTATIVA EXISTENTE
-       ===================================================== */
-
-    if (
-      sessao
-      &&
-      sessao.horarioFim
-    ) {
-
-      horarioFim =
-        Number(
-          sessao.horarioFim
-        );
-
-
-      contadorAlertas =
-        Number(
-          sessao.contadorAlertas
-          ||
-          0
-        );
-
-    }
-
-
-    /* =====================================================
-       NOVA TENTATIVA
-       ===================================================== */
-
-    else {
-
-      const duracaoMinutos =
-        Number(
-          dadosProva.duracao
-          ||
-          50
-        );
-
-
-      horarioFim =
-        Date.now()
-        +
-        (
-          duracaoMinutos
-          *
-          60
-          *
-          1000
-        );
-
-
-      contadorAlertas = 0;
-
-      provaEncerrada = false;
-
-
-      salvarSessao({
-
-        iniciadaEm:
-          new Date()
-            .toISOString(),
-
-        encerrada:
-          false
-
-      });
 
     }
 
@@ -483,30 +349,20 @@ async function inicializarProva() {
 
 
     /* =====================================================
-       VERIFICAR TEMPO
+       TENTATIVA ENCERRADA
        ===================================================== */
 
-    const restante =
-      calcularTempoRestante();
+    if (provaEncerrada) {
 
+      esconderLoader();
 
-    if (
-      restante <= 0
-    ) {
+      mostrarProvaEncerrada(
 
-      encerrarProva(
-        "Tempo Esgotado!"
+        sessao?.motivoEncerramento
+        ||
+        "Esta prova já foi encerrada."
+
       );
-
-
-      if (elLoader) {
-
-        elLoader.classList.add(
-          'hidden'
-        );
-
-      }
-
 
       return;
 
@@ -514,64 +370,94 @@ async function inicializarProva() {
 
 
     /* =====================================================
-       GOOGLE FORMS
+       PROVA JÁ INICIADA
        ===================================================== */
 
-    if (elIframe) {
+    if (
+      provaIniciada
+      &&
+      horarioFim
+    ) {
 
       /*
-        Cada NOVA tentativa recebe uma URL
-        diferente.
+        O aluno atualizou a página.
 
-        Isso força uma nova navegação do iframe.
-
-        IMPORTANTE:
-        o parâmetro é ignorado pelo Forms,
-        mas altera a URL solicitada.
+        Não recebe novo tempo.
+        Não precisa clicar novamente
+        em INICIAR PROVA.
       */
 
-      const separador =
-        dadosProva.linkForms.includes("?")
-          ? "&"
-          : "?";
+      if (
+        calcularTempoRestante() <= 0
+      ) {
 
+        esconderLoader();
 
-      const urlForms =
-        dadosProva.linkForms
-        +
-        separador
-        +
-        "pas_tentativa="
-        +
-        encodeURIComponent(
-          tentativaId
+        encerrarProva(
+          "Tempo Esgotado!"
         );
 
+        return;
 
-      elIframe.src =
-        urlForms;
-
-    }
+      }
 
 
-    if (elLoader) {
+      carregarGoogleForms();
 
-      elLoader.classList.add(
-        'hidden'
-      );
+      esconderLoader();
+
+      esconderModoPreparacao();
+
+      iniciarCronometro();
+
+      iniciarMonitoramentoSessao();
+
+      iniciarProtecoesContraCopia();
+
+      return;
 
     }
 
 
     /* =====================================================
-       INICIAR SISTEMA
+       PRIMEIRA ABERTURA DA TENTATIVA
        ===================================================== */
 
-    iniciarCronometro();
+    provaIniciada = false;
 
-    iniciarMonitoramentoSessao();
+    provaEncerrada = false;
 
-    iniciarProtecoesContraCopia();
+    horarioFim = null;
+
+
+    salvarSessao({
+
+      criadaEm:
+        sessao?.criadaEm
+        ||
+        new Date().toISOString(),
+
+      iniciada:
+        false,
+
+      encerrada:
+        false
+
+    });
+
+
+    /*
+      O Forms já é carregado para permitir
+      que o aluno faça login no Google.
+
+      MAS o cronômetro ainda NÃO começa.
+    */
+
+    carregarGoogleForms();
+
+    esconderLoader();
+
+    mostrarModoPreparacao();
 
   }
 
@@ -582,7 +468,6 @@ async function inicializarProva() {
       erro
     );
 
-
     alert(
       "Erro ao carregar a prova: "
       +
@@ -590,6 +475,212 @@ async function inicializarProva() {
     );
 
   }
+
+}
+
+
+/* =========================================================
+   GOOGLE FORMS
+   ========================================================= */
+
+function carregarGoogleForms() {
+
+  const elIframe =
+    document.getElementById(
+      "iframe-forms"
+    );
+
+  if (
+    !elIframe
+    ||
+    !dadosProvaAtual
+  ) {
+    return;
+  }
+
+
+  const link =
+    dadosProvaAtual.linkForms;
+
+
+  const separador =
+    link.includes("?")
+      ? "&"
+      : "?";
+
+
+  /*
+    Cada tentativa recebe uma URL diferente.
+  */
+
+  const urlForms =
+    link
+    +
+    separador
+    +
+    "pas_tentativa="
+    +
+    encodeURIComponent(
+      tentativaId
+    );
+
+
+  elIframe.src =
+    urlForms;
+
+}
+
+
+/* =========================================================
+   MODO DE PREPARAÇÃO
+   ========================================================= */
+
+function mostrarModoPreparacao() {
+
+  if (btnIniciarProva) {
+
+    btnIniciarProva.classList.remove(
+      "hidden"
+    );
+
+  }
+
+  if (avisoPreparacao) {
+
+    avisoPreparacao.classList.remove(
+      "hidden"
+    );
+
+  }
+
+  if (elCronometro) {
+
+    elCronometro.innerText =
+      "--:--";
+
+  }
+
+}
+
+
+function esconderModoPreparacao() {
+
+  if (btnIniciarProva) {
+
+    btnIniciarProva.classList.add(
+      "hidden"
+    );
+
+  }
+
+  if (avisoPreparacao) {
+
+    avisoPreparacao.classList.add(
+      "hidden"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   CLIQUE EM INICIAR PROVA
+   ========================================================= */
+
+if (btnIniciarProva) {
+
+  btnIniciarProva.addEventListener(
+
+    "click",
+
+    () => {
+
+      iniciarTentativa();
+
+    }
+
+  );
+
+}
+
+
+function iniciarTentativa() {
+
+  /*
+    Proteção contra clique duplo.
+  */
+
+  if (
+    provaIniciada
+    ||
+    provaEncerrada
+  ) {
+    return;
+  }
+
+
+  if (!dadosProvaAtual) {
+    return;
+  }
+
+
+  const duracaoMinutos =
+    Number(
+      dadosProvaAtual.duracao
+      ||
+      50
+    );
+
+
+  /*
+    AQUI COMEÇA OFICIALMENTE
+    O TEMPO DA PROVA.
+  */
+
+  horarioFim =
+    Date.now()
+    +
+    (
+      duracaoMinutos
+      *
+      60
+      *
+      1000
+    );
+
+
+  provaIniciada =
+    true;
+
+  contadorAlertas =
+    0;
+
+
+  salvarSessao({
+
+    iniciada:
+      true,
+
+    iniciadaEm:
+      new Date()
+        .toISOString(),
+
+    encerrada:
+      false
+
+  });
+
+
+  atualizarContadorAlertas();
+
+  esconderModoPreparacao();
+
+  iniciarCronometro();
+
+  iniciarMonitoramentoSessao();
+
+  iniciarProtecoesContraCopia();
 
 }
 
@@ -604,7 +695,6 @@ function calcularTempoRestante() {
     return 0;
   }
 
-
   return Math.max(
 
     0,
@@ -616,9 +706,7 @@ function calcularTempoRestante() {
         -
         Date.now()
       )
-
       /
-
       1000
 
     )
@@ -629,16 +717,10 @@ function calcularTempoRestante() {
 
 
 /* =========================================================
-   ATUALIZAR CRONÔMETRO
+   CRONÔMETRO
    ========================================================= */
 
 function atualizarCronometro() {
-
-  const elCronometro =
-    document.getElementById(
-      'cronometro'
-    );
-
 
   tempoRestanteSegundos =
     calcularTempoRestante();
@@ -646,16 +728,14 @@ function atualizarCronometro() {
 
   const minutos =
     String(
-
       Math.floor(
         tempoRestanteSegundos
         /
         60
       )
-
     ).padStart(
       2,
-      '0'
+      "0"
     );
 
 
@@ -666,7 +746,7 @@ function atualizarCronometro() {
       60
     ).padStart(
       2,
-      '0'
+      "0"
     );
 
 
@@ -679,10 +759,6 @@ function atualizarCronometro() {
 
 }
 
-
-/* =========================================================
-   CRONÔMETRO
-   ========================================================= */
 
 function iniciarCronometro() {
 
@@ -706,7 +782,6 @@ function iniciarCronometro() {
       "Tempo Esgotado!"
     );
 
-
     return;
 
   }
@@ -728,7 +803,6 @@ function iniciarCronometro() {
             intervalId
           );
 
-
           intervalId = null;
 
 
@@ -748,20 +822,14 @@ function iniciarCronometro() {
 
 
 /* =========================================================
-   CONTADOR DE ALERTAS
+   ALERTAS
    ========================================================= */
 
 function atualizarContadorAlertas() {
 
-  const elAlertas =
-    document.getElementById(
-      'contador-alertas'
-    );
+  if (elContadorAlertas) {
 
-
-  if (elAlertas) {
-
-    elAlertas.innerText =
+    elContadorAlertas.innerText =
       contadorAlertas;
 
   }
@@ -770,14 +838,12 @@ function atualizarContadorAlertas() {
 
 
 /* =========================================================
-   MONITORAMENTO
+   MONITORAMENTO DE SAÍDA
    ========================================================= */
 
 function iniciarMonitoramentoSessao() {
 
-  if (
-    monitoramentoIniciado
-  ) {
+  if (monitoramentoIniciado) {
     return;
   }
 
@@ -788,45 +854,43 @@ function iniciarMonitoramentoSessao() {
 
   document.addEventListener(
 
-    'visibilitychange',
+    "visibilitychange",
 
     () => {
 
       if (
+        !provaIniciada
+        ||
         provaEncerrada
       ) {
         return;
       }
 
 
-      /* ===============================================
-         PÁGINA FICOU OCULTA
-         =============================================== */
+      /*
+        Ficou oculta.
+      */
 
-      if (
-        document.hidden
-      ) {
+      if (document.hidden) {
 
         paginaFicouOculta =
           true;
-
 
         return;
 
       }
 
 
-      /* ===============================================
-         PÁGINA VOLTOU A FICAR VISÍVEL
-         =============================================== */
+      /*
+        Voltou a ficar visível.
 
-      if (
-        paginaFicouOculta
-      ) {
+        Aqui confirmamos uma saída.
+      */
+
+      if (paginaFicouOculta) {
 
         paginaFicouOculta =
           false;
-
 
         registrarSaidaDeTela();
 
@@ -846,6 +910,8 @@ function iniciarMonitoramentoSessao() {
 function registrarSaidaDeTela() {
 
   if (
+    !provaIniciada
+    ||
     provaEncerrada
   ) {
     return;
@@ -895,232 +961,226 @@ function registrarSaidaDeTela() {
 
 function iniciarProtecoesContraCopia() {
 
-  /* =======================================================
-     BOTÃO DIREITO
-     ======================================================= */
-
   document.addEventListener(
 
-    'contextmenu',
+    "contextmenu",
 
-    (evento) => {
-
-      evento.preventDefault();
-
-
-      if (
-        !provaEncerrada
-      ) {
-
-        salvarLogViolacao(
-          "Tentativa de abrir menu de contexto"
-        );
-
-      }
-
-    }
+    bloquearMenuContexto
 
   );
 
 
-  /* =======================================================
-     COPIAR
-     ======================================================= */
-
   document.addEventListener(
 
-    'copy',
+    "copy",
 
-    (evento) => {
-
-      evento.preventDefault();
-
-
-      if (
-        !provaEncerrada
-      ) {
-
-        salvarLogViolacao(
-          "Tentativa de copiar conteúdo"
-        );
-
-      }
-
-    }
+    bloquearCopia
 
   );
 
 
-  /* =======================================================
-     RECORTAR
-     ======================================================= */
-
   document.addEventListener(
 
-    'cut',
+    "cut",
 
-    (evento) => {
-
-      evento.preventDefault();
-
-
-      if (
-        !provaEncerrada
-      ) {
-
-        salvarLogViolacao(
-          "Tentativa de recortar conteúdo"
-        );
-
-      }
-
-    }
+    bloquearRecorte
 
   );
 
 
-  /* =======================================================
-     ARRASTAR
-     ======================================================= */
-
   document.addEventListener(
 
-    'dragstart',
+    "dragstart",
 
-    (evento) => {
-
-      evento.preventDefault();
-
-    }
+    bloquearArrasto
 
   );
 
 
-  /* =======================================================
-     ATALHOS
-     ======================================================= */
-
   document.addEventListener(
 
-    'keydown',
+    "keydown",
 
-    (evento) => {
-
-      if (
-        provaEncerrada
-      ) {
-        return;
-      }
-
-
-      const tecla =
-        evento.key
-          .toLowerCase();
-
-
-      const modificador =
-        evento.ctrlKey
-        ||
-        evento.metaKey;
-
-
-      /*
-        Ctrl/Cmd + C
-        Ctrl/Cmd + X
-        Ctrl/Cmd + A
-        Ctrl/Cmd + S
-        Ctrl/Cmd + P
-        Ctrl/Cmd + U
-      */
-
-      if (
-        modificador
-        &&
-        [
-          'c',
-          'x',
-          'a',
-          's',
-          'p',
-          'u'
-        ].includes(
-          tecla
-        )
-      ) {
-
-        evento.preventDefault();
-
-
-        salvarLogViolacao(
-          `Atalho bloqueado: ${tecla.toUpperCase()}`
-        );
-
-
-        return;
-
-      }
-
-
-      /*
-        F12
-      */
-
-      if (
-        evento.key ===
-        'F12'
-      ) {
-
-        evento.preventDefault();
-
-
-        salvarLogViolacao(
-          "Tentativa de usar F12"
-        );
-
-
-        return;
-
-      }
-
-
-      /*
-        Ctrl + Shift + I
-        Ctrl + Shift + J
-        Ctrl + Shift + C
-      */
-
-      if (
-        evento.ctrlKey
-        &&
-        evento.shiftKey
-        &&
-        [
-          'i',
-          'j',
-          'c'
-        ].includes(
-          tecla
-        )
-      ) {
-
-        evento.preventDefault();
-
-
-        salvarLogViolacao(
-          "Tentativa de usar atalho de inspeção"
-        );
-
-      }
-
-    }
+    bloquearAtalhos
 
   );
 
 }
 
 
+function bloquearMenuContexto(
+  evento
+) {
+
+  if (
+    !provaIniciada
+    ||
+    provaEncerrada
+  ) {
+    return;
+  }
+
+  evento.preventDefault();
+
+  salvarLogViolacao(
+    "Tentativa de abrir menu de contexto"
+  );
+
+}
+
+
+function bloquearCopia(
+  evento
+) {
+
+  if (
+    !provaIniciada
+    ||
+    provaEncerrada
+  ) {
+    return;
+  }
+
+  evento.preventDefault();
+
+  salvarLogViolacao(
+    "Tentativa de copiar conteúdo"
+  );
+
+}
+
+
+function bloquearRecorte(
+  evento
+) {
+
+  if (
+    !provaIniciada
+    ||
+    provaEncerrada
+  ) {
+    return;
+  }
+
+  evento.preventDefault();
+
+  salvarLogViolacao(
+    "Tentativa de recortar conteúdo"
+  );
+
+}
+
+
+function bloquearArrasto(
+  evento
+) {
+
+  if (
+    !provaIniciada
+    ||
+    provaEncerrada
+  ) {
+    return;
+  }
+
+  evento.preventDefault();
+
+}
+
+
+function bloquearAtalhos(
+  evento
+) {
+
+  if (
+    !provaIniciada
+    ||
+    provaEncerrada
+  ) {
+    return;
+  }
+
+
+  const tecla =
+    evento.key
+      .toLowerCase();
+
+
+  const modificador =
+    evento.ctrlKey
+    ||
+    evento.metaKey;
+
+
+  if (
+    modificador
+    &&
+    [
+      "c",
+      "x",
+      "a",
+      "s",
+      "p",
+      "u"
+    ].includes(
+      tecla
+    )
+  ) {
+
+    evento.preventDefault();
+
+    salvarLogViolacao(
+      `Atalho bloqueado: ${tecla.toUpperCase()}`
+    );
+
+    return;
+
+  }
+
+
+  if (
+    evento.key ===
+    "F12"
+  ) {
+
+    evento.preventDefault();
+
+    salvarLogViolacao(
+      "Tentativa de usar F12"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    evento.ctrlKey
+    &&
+    evento.shiftKey
+    &&
+    [
+      "i",
+      "j",
+      "c"
+    ].includes(
+      tecla
+    )
+  ) {
+
+    evento.preventDefault();
+
+    salvarLogViolacao(
+      "Tentativa de usar atalho de inspeção"
+    );
+
+  }
+
+}
+
+
 /* =========================================================
-   SALVAR LOG
+   LOG
    ========================================================= */
 
 async function salvarLogViolacao(
@@ -1128,6 +1188,8 @@ async function salvarLogViolacao(
 ) {
 
   if (
+    !provaIniciada
+    ||
     provaEncerrada
   ) {
     return;
@@ -1184,9 +1246,7 @@ function encerrarProva(
   motivo
 ) {
 
-  if (
-    provaEncerrada
-  ) {
+  if (provaEncerrada) {
     return;
   }
 
@@ -1195,14 +1255,11 @@ function encerrarProva(
     true;
 
 
-  if (
-    intervalId
-  ) {
+  if (intervalId) {
 
     clearInterval(
       intervalId
     );
-
 
     intervalId =
       null;
@@ -1211,6 +1268,9 @@ function encerrarProva(
 
 
   salvarSessao({
+
+    iniciada:
+      true,
 
     encerrada:
       true,
@@ -1233,7 +1293,7 @@ function encerrarProva(
 
 
 /* =========================================================
-   TELA DE PROVA ENCERRADA
+   PROVA ENCERRADA
    ========================================================= */
 
 function mostrarProvaEncerrada(
@@ -1244,15 +1304,10 @@ function mostrarProvaEncerrada(
     true;
 
 
-  const elCronometro =
-    document.getElementById(
-      'cronometro'
-    );
+  esconderModoPreparacao();
 
 
-  if (
-    elCronometro
-  ) {
+  if (elCronometro) {
 
     elCronometro.innerText =
       "00:00";
@@ -1262,13 +1317,11 @@ function mostrarProvaEncerrada(
 
   const containerForms =
     document.getElementById(
-      'container-forms'
+      "container-forms"
     );
 
 
-  if (
-    containerForms
-  ) {
+  if (containerForms) {
 
     containerForms.innerHTML = `
 
@@ -1298,9 +1351,11 @@ function mostrarProvaEncerrada(
 
 
         <p class="text-slate-300">
+
           ${escapeHtml(
             motivo
           )}
+
         </p>
 
 
@@ -1313,7 +1368,7 @@ function mostrarProvaEncerrada(
         >
           Esta tentativa foi finalizada.
           Atualizar a página não reiniciará
-          esta tentativa.
+          a avaliação.
         </p>
 
 
@@ -1341,7 +1396,30 @@ function mostrarProvaEncerrada(
 
 
 /* =========================================================
-   PROTEÇÃO DE TEXTO
+   LOADER
+   ========================================================= */
+
+function esconderLoader() {
+
+  const loader =
+    document.getElementById(
+      "loader"
+    );
+
+
+  if (loader) {
+
+    loader.classList.add(
+      "hidden"
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
    ========================================================= */
 
 function escapeHtml(
