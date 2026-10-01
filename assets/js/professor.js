@@ -661,6 +661,42 @@ if (formCriar) {
 
 }
 
+/* =========================================================
+   GERENCIAR USUÁRIOS
+   ========================================================= */
+
+if (btnGerenciarUsuarios) {
+
+  btnGerenciarUsuarios.addEventListener(
+    "click",
+
+    () => {
+
+      /*
+        Segurança adicional no cliente.
+        A página usuarios.html também fará
+        sua própria verificação.
+      */
+
+      if (perfilAtual !== "administrador") {
+
+        alert(
+          "Esta área é exclusiva do administrador."
+        );
+
+        return;
+
+      }
+
+
+      window.location.href =
+        "./usuarios.html";
+
+    }
+  );
+
+}
+
 
 /* =========================================================
    LOGOUT
