@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -9,16 +10,73 @@
     content="width=device-width, initial-scale=1.0"
   >
 
+  <meta name="theme-color" content="#0f172a">
+
   <title>Execução de Prova</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
 
+
   <style>
+
     body {
       user-select: none;
+      -webkit-user-select: none;
     }
+
+
+    /*
+     * O iframe ocupa a área disponível.
+     */
+
+    #iframe-forms {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+
+    /*
+     * CAMADA DE PROTEÇÃO
+     *
+     * Enquanto estiver visível,
+     * intercepta os cliques antes
+     * que eles cheguem ao Google Forms.
+     */
+
+    #bloqueio-preparacao {
+      position: absolute;
+      inset: 0;
+
+      z-index: 40;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 24px;
+
+      background:
+        rgba(2, 6, 23, 0.88);
+
+      backdrop-filter:
+        blur(5px);
+
+      -webkit-backdrop-filter:
+        blur(5px);
+
+      pointer-events: auto;
+    }
+
+
+    #bloqueio-preparacao.hidden {
+      display: none;
+    }
+
   </style>
+
 </head>
+
 
 <body
   class="
@@ -30,6 +88,7 @@
   "
 >
 
+
   <!-- =====================================================
        BARRA SUPERIOR
        ===================================================== -->
@@ -39,7 +98,8 @@
       bg-slate-900
       border-b
       border-slate-800
-      px-6
+      px-4
+      md:px-6
       py-3
       flex
       justify-between
@@ -50,7 +110,9 @@
     "
   >
 
-    <div>
+    <!-- INFORMAÇÕES -->
+
+    <div class="min-w-0">
 
       <h1
         id="titulo-exame"
@@ -58,62 +120,46 @@
           font-bold
           text-sm
           text-slate-200
+          truncate
         "
       >
         Carregando Prova...
       </h1>
+
 
       <p
         id="info-aluno"
         class="
           text-xs
           text-slate-400
+          truncate
         "
       ></p>
 
     </div>
 
 
+    <!-- INDICADORES -->
+
     <div
       class="
         flex
         items-center
-        space-x-6
+        space-x-4
+        md:space-x-6
+        ml-4
       "
     >
 
-      <!-- BOTÃO DE INÍCIO -->
-
-      <button
-        id="btn-iniciar-prova"
-        type="button"
-        class="
-          hidden
-          bg-emerald-600
-          hover:bg-emerald-500
-          active:bg-emerald-700
-          transition
-          px-5
-          py-2
-          rounded-lg
-          text-sm
-          font-bold
-          text-white
-          shadow-lg
-        "
-      >
-        INICIAR PROVA
-      </button>
-
-
-      <!-- CRONÔMETRO -->
+      <!-- TEMPO -->
 
       <div class="text-right">
 
         <span
           class="
             block
-            text-[10px]
+            text-[9px]
+            md:text-[10px]
             text-slate-400
             uppercase
           "
@@ -121,10 +167,12 @@
           Tempo Restante
         </span>
 
+
         <span
           id="cronometro"
           class="
-            text-xl
+            text-lg
+            md:text-xl
             font-mono
             font-bold
             text-emerald-400
@@ -143,25 +191,29 @@
           text-right
           border-l
           border-slate-800
-          pl-6
+          pl-4
+          md:pl-6
         "
       >
 
         <span
           class="
             block
-            text-[10px]
+            text-[9px]
+            md:text-[10px]
             text-slate-400
             uppercase
           "
         >
-          Alertas de Saída
+          Alertas
         </span>
+
 
         <span
           id="contador-alertas"
           class="
-            text-xl
+            text-lg
+            md:text-xl
             font-mono
             font-bold
             text-amber-400
@@ -178,40 +230,7 @@
 
 
   <!-- =====================================================
-       AVISO DE PREPARAÇÃO
-       ===================================================== -->
-
-  <div
-    id="aviso-preparacao"
-    class="
-      hidden
-      bg-blue-950
-      border-b
-      border-blue-800
-      px-4
-      py-3
-      text-center
-      text-sm
-      text-blue-200
-    "
-  >
-
-    Faça login na sua conta Google, caso seja solicitado.
-
-    Quando o formulário da avaliação estiver pronto,
-    clique em
-
-    <strong class="text-white">
-      INICIAR PROVA
-    </strong>.
-
-    O cronômetro começará somente nesse momento.
-
-  </div>
-
-
-  <!-- =====================================================
-       GOOGLE FORMS
+       CONTAINER DA PROVA
        ===================================================== -->
 
   <main
@@ -219,10 +238,32 @@
     class="
       flex-grow
       relative
+      min-h-[calc(100vh-65px)]
     "
   >
 
-    <!-- LOADER -->
+
+    <!-- ===================================================
+         GOOGLE FORMS
+         =================================================== -->
+
+    <iframe
+      id="iframe-forms"
+      src=""
+      class="
+        absolute
+        inset-0
+        w-full
+        h-full
+        border-0
+      "
+      allow="fullscreen"
+    ></iframe>
+
+
+    <!-- ===================================================
+         LOADER
+         =================================================== -->
 
     <div
       id="loader"
@@ -233,30 +274,198 @@
         items-center
         justify-center
         bg-slate-950
-        z-10
+        z-30
       "
     >
 
-      <p class="text-slate-400">
-        Preparando avaliação...
-      </p>
+      <div class="text-center">
+
+        <div
+          class="
+            w-10
+            h-10
+            border-4
+            border-slate-700
+            border-t-blue-500
+            rounded-full
+            animate-spin
+            mx-auto
+            mb-4
+          "
+        ></div>
+
+        <p class="text-slate-400">
+          Preparando avaliação...
+        </p>
+
+      </div>
 
     </div>
 
 
-    <!-- FORMULÁRIO -->
+    <!-- ===================================================
+         CAMADA DE PREPARAÇÃO
+         =================================================== -->
 
-    <iframe
-      id="iframe-forms"
-      src=""
-      class="
-        w-full
-        h-full
-        border-0
-        min-h-[calc(100vh-65px)]
-      "
-      allow="fullscreen"
-    ></iframe>
+    <div
+      id="bloqueio-preparacao"
+      class="hidden"
+    >
+
+      <div
+        class="
+          w-full
+          max-w-lg
+          bg-slate-900
+          border
+          border-slate-700
+          rounded-2xl
+          shadow-2xl
+          p-6
+          md:p-8
+          text-center
+        "
+      >
+
+
+        <!-- ÍCONE -->
+
+        <div
+          class="
+            w-16
+            h-16
+            rounded-full
+            bg-blue-950
+            border
+            border-blue-700
+            flex
+            items-center
+            justify-center
+            mx-auto
+            mb-5
+          "
+        >
+
+          <span
+            class="
+              text-3xl
+            "
+          >
+            🔒
+          </span>
+
+        </div>
+
+
+        <!-- TÍTULO -->
+
+        <h2
+          class="
+            text-2xl
+            font-bold
+            text-white
+            mb-3
+          "
+        >
+          Preparação da Avaliação
+        </h2>
+
+
+        <!-- TEXTO -->
+
+        <p
+          class="
+            text-slate-300
+            leading-relaxed
+          "
+        >
+          O formulário está carregado,
+          mas permanece bloqueado.
+        </p>
+
+
+        <p
+          class="
+            text-slate-400
+            text-sm
+            leading-relaxed
+            mt-3
+          "
+        >
+          Confirme que você está utilizando
+          a conta Google correta e que está
+          preparado para iniciar a prova.
+        </p>
+
+
+        <!-- AVISO -->
+
+        <div
+          class="
+            bg-amber-950/50
+            border
+            border-amber-800
+            rounded-xl
+            p-4
+            mt-5
+          "
+        >
+
+          <p
+            class="
+              text-sm
+              text-amber-200
+            "
+          >
+            Ao clicar em
+            <strong class="text-white">
+              INICIAR PROVA
+            </strong>,
+            o cronômetro começará imediatamente.
+          </p>
+
+        </div>
+
+
+        <!-- BOTÃO -->
+
+        <button
+          id="btn-iniciar-prova"
+          type="button"
+          class="
+            w-full
+            mt-6
+            bg-emerald-600
+            hover:bg-emerald-500
+            active:bg-emerald-700
+            transition
+            rounded-xl
+            px-6
+            py-4
+            text-white
+            font-bold
+            text-lg
+            shadow-lg
+          "
+        >
+          INICIAR PROVA
+        </button>
+
+
+        <p
+          class="
+            text-xs
+            text-slate-500
+            mt-4
+          "
+        >
+          Depois de iniciada, atualizar a página
+          não reiniciará o cronômetro.
+        </p>
+
+      </div>
+
+    </div>
 
   </main>
 
