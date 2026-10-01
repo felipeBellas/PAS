@@ -31,7 +31,7 @@
   <main class="w-full max-w-md">
 
     <!-- =====================================================
-         LOGO
+         CABEÇALHO
          ===================================================== -->
 
     <div class="text-center mb-8">
@@ -82,7 +82,7 @@
 
 
       <!-- =================================================
-           ORIENTAÇÃO
+           AVISO IMPORTANTE
            ================================================= -->
 
       <div
@@ -101,11 +101,12 @@
             text-blue-300
             font-bold
             text-sm
-            mb-2
+            mb-3
           "
         >
           Antes de acessar a avaliação
         </h3>
+
 
         <p
           class="
@@ -115,33 +116,45 @@
           "
         >
           Faça login na conta Google que será utilizada
-          para responder à prova antes de iniciar.
+          para responder à prova antes de acessar a avaliação.
         </p>
+
+
+        <div
+          class="
+            border-t
+            border-blue-900
+            mt-3
+            pt-3
+          "
+        >
+
+          <p
+            class="
+              text-sm
+              text-amber-300
+              font-semibold
+              leading-relaxed
+            "
+          >
+            Atenção: ao clicar em ACESSAR AVALIAÇÃO,
+            o cronômetro será iniciado automaticamente.
+          </p>
+
+        </div>
+
 
         <p
           class="
-            text-sm
+            text-xs
             text-slate-400
             leading-relaxed
-            mt-2
+            mt-3
           "
         >
-          Ao acessar a avaliação, o formulário ficará
-          bloqueado até você clicar em
-          <strong class="text-white">
-            INICIAR PROVA
-          </strong>.
-        </p>
-
-        <p
-          class="
-            text-sm
-            text-emerald-300
-            font-semibold
-            mt-2
-          "
-        >
-          O cronômetro só começará depois da sua confirmação.
+          Caso ainda seja necessário concluir o login
+          no Google, esse período fará parte do tempo
+          disponível para a avaliação.
         </p>
 
       </div>
@@ -218,7 +231,7 @@
             autocomplete="off"
             autocapitalize="characters"
             spellcheck="false"
-            placeholder="Ex: BIO-101"
+            placeholder="Digite o código"
             class="
               w-full
               bg-slate-950
@@ -242,6 +255,7 @@
         <!-- BOTÃO -->
 
         <button
+          id="btn-acessar"
           type="submit"
           class="
             w-full
@@ -261,7 +275,9 @@
       </form>
 
 
-      <!-- MENSAGEM -->
+      <!-- =================================================
+           MENSAGEM
+           ================================================= -->
 
       <p
         id="mensagem"
@@ -323,15 +339,18 @@
         "form-acesso"
       );
 
-    const nomeAluno =
+
+    const campoNome =
       document.getElementById(
         "nome-aluno"
       );
 
-    const codigoProva =
+
+    const campoCodigo =
       document.getElementById(
         "codigo-prova"
       );
+
 
     const mensagem =
       document.getElementById(
@@ -339,16 +358,22 @@
       );
 
 
+    const btnAcessar =
+      document.getElementById(
+        "btn-acessar"
+      );
+
+
     /* =====================================================
-       NORMALIZAÇÃO DO CÓDIGO
+       NORMALIZAR CÓDIGO
        ===================================================== */
 
-    codigoProva.addEventListener(
+    campoCodigo.addEventListener(
       "input",
       () => {
 
-        codigoProva.value =
-          codigoProva.value
+        campoCodigo.value =
+          campoCodigo.value
             .toUpperCase()
             .replace(
               /\s+/g,
@@ -360,7 +385,7 @@
 
 
     /* =====================================================
-       GERAR ID DA TENTATIVA
+       GERAR IDENTIFICADOR ÚNICO DA TENTATIVA
        ===================================================== */
 
     function gerarIdTentativa() {
@@ -390,23 +415,22 @@
 
 
     /* =====================================================
-       ACESSAR AVALIAÇÃO
+       ENTRAR NA AVALIAÇÃO
        ===================================================== */
 
     formAcesso.addEventListener(
       "submit",
-
       (event) => {
 
         event.preventDefault();
 
 
         const nome =
-          nomeAluno.value.trim();
+          campoNome.value.trim();
 
 
         const codigo =
-          codigoProva.value
+          campoCodigo.value
             .trim()
             .toUpperCase();
 
@@ -416,21 +440,29 @@
         );
 
 
+        /* =================================================
+           VALIDAR NOME
+           ================================================= */
+
         if (!nome) {
 
           mensagem.textContent =
-            "Informe o nome do aluno.";
+            "Informe o nome completo.";
 
           mensagem.classList.remove(
             "hidden"
           );
 
-          nomeAluno.focus();
+          campoNome.focus();
 
           return;
 
         }
 
+
+        /* =================================================
+           VALIDAR CÓDIGO
+           ================================================= */
 
         if (!codigo) {
 
@@ -441,11 +473,22 @@
             "hidden"
           );
 
-          codigoProva.focus();
+          campoCodigo.focus();
 
           return;
 
         }
+
+
+        /* =================================================
+           EVITAR CLIQUE DUPLO
+           ================================================= */
+
+        btnAcessar.disabled =
+          true;
+
+        btnAcessar.innerText =
+          "ACESSANDO...";
 
 
         /* =================================================
@@ -455,6 +498,10 @@
         const tentativa =
           gerarIdTentativa();
 
+
+        /* =================================================
+           DADOS TEMPORÁRIOS
+           ================================================= */
 
         sessionStorage.setItem(
           "aluno_nome",
